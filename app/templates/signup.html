@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastrar empresa | StockAI</title>
+    <style>
+        :root { color: #173b37; font-family: "Segoe UI", Arial, sans-serif; }
+        * { box-sizing: border-box; }
+        body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; overflow: hidden; background: #e8f2ef; }
+        body::before, body::after { content: ""; position: fixed; border-radius: 50%; z-index: -1; filter: blur(1px); }
+        body::before { width: 520px; height: 520px; top: -250px; left: -160px; background: #8ed8c9; opacity: .63; }
+        body::after { width: 460px; height: 460px; right: -160px; bottom: -210px; background: #a7d4ee; opacity: .65; }
+        .layout { width: min(100%, 900px); min-height: 620px; display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #ffffffa8; border-radius: 24px; overflow: hidden; background: #fff; box-shadow: 0 26px 70px #173b3729; }
+        .intro { position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 46px; overflow: hidden; color: white; background: linear-gradient(145deg, #075f5a, #0b877d); }
+        .intro::after { content: ""; position: absolute; width: 280px; height: 280px; right: -145px; bottom: -130px; border: 36px solid #78d2c2; border-radius: 50%; opacity: .35; }
+        .brand { display: flex; align-items: center; gap: 11px; font-weight: 800; font-size: 21px; letter-spacing: -.5px; }
+        .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid #a8e3d9; border-radius: 10px; font-size: 18px; }
+        .intro h1 { max-width: 290px; margin: 0; font-size: clamp(31px, 4vw, 43px); line-height: 1.08; letter-spacing: -1.8px; }
+        .intro p { max-width: 285px; margin: 16px 0 0; color: #d1f0eb; line-height: 1.55; }
+        .secure-note { position: relative; z-index: 1; display: flex; align-items: center; gap: 9px; color: #c9eee8; font-size: 13px; }
+        .secure-note span { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 50%; background: #ffffff20; }
+        main { display: flex; align-items: center; padding: 40px 48px; overflow-y: auto; }
+        .form-wrap { width: 100%; max-width: 340px; margin: auto; }
+        .eyebrow { margin: 0 0 9px; color: #087f78; font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+        h2 { margin: 0; color: #173b37; font-size: 26px; letter-spacing: -1px; }
+        .lead { margin: 8px 0 22px; color: #66807b; font-size: 14px; line-height: 1.5; }
+        label { display: block; margin-top: 14px; color: #36504b; font-size: 13px; font-weight: 750; }
+        input { width: 100%; margin-top: 6px; padding: 11px 12px; outline: none; color: #173b37; border: 1px solid #c9d8d4; border-radius: 10px; background: #fbfdfc; font: inherit; transition: border .18s, box-shadow .18s; }
+        input:focus { border-color: #087f78; box-shadow: 0 0 0 4px #0a82791a; }
+        .hint { margin: 5px 0 0; color: #80948f; font-size: 11.5px; }
+        button { width: 100%; margin-top: 22px; padding: 13px; border: 0; border-radius: 10px; color: white; background: #087f78; box-shadow: 0 8px 18px #087f7833; font: 750 14px inherit; cursor: pointer; transition: transform .18s, background .18s; }
+        button:hover { background: #066d67; transform: translateY(-1px); }
+        button:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+        button:focus-visible { outline: 3px solid #75c9c0; outline-offset: 2px; }
+        .error, .success { margin: 0 0 16px; padding: 11px 12px; border-radius: 9px; font-size: 13px; }
+        .error { color: #9d251d; border: 1px solid #ffc4bd; background: #fff0ee; }
+        .success { color: #0b5c46; border: 1px solid #a7e3cf; background: #ecfbf4; }
+        .footer { margin: 20px 0 0; color: #80948f; font-size: 12px; text-align: center; }
+        .footer a { color: #087f78; font-weight: 700; text-decoration: none; }
+        @media (max-width: 680px) { body { padding: 16px; overflow: auto; } .layout { min-height: auto; grid-template-columns: 1fr; } .intro { min-height: 190px; padding: 28px; } .intro h1 { margin-top: 24px; font-size: 27px; } .intro p, .secure-note { display: none; } main { padding: 30px 24px; } }
+    </style>
+</head>
+<body>
+    <section class="layout">
+        <aside class="intro" aria-label="StockAI">
+            <div class="brand"><span class="brand-mark" aria-hidden="true">&#9733;</span> StockAI</div>
+            <div><h1>Comece a organizar seu estoque agora.</h1><p>Crie a conta da sua empresa e tenha acesso imediato ao painel de controle.</p></div>
+            <div class="secure-note"><span aria-hidden="true">&#10003;</span> Seus dados ficam isolados por empresa</div>
+        </aside>
+        <main>
+            <div class="form-wrap">
+                <p class="eyebrow">Novo cadastro</p>
+                <h2>Criar sua empresa</h2>
+                <p class="lead">Preencha os dados abaixo para começar a usar o StockAI.</p>
+
+                <p class="error" role="alert" id="mensagem-erro" style="display:none;"></p>
+                <p class="success" role="status" id="mensagem-sucesso" style="display:none;"></p>
+
+                <form id="form-signup" autocomplete="off">
+                    <label for="empresa_nome">Nome da empresa
+                        <input id="empresa_nome" name="empresa_nome" autocomplete="organization" required minlength="2" maxlength="120">
+                    </label>
+                    <label for="admin_nome">Seu nome
+                        <input id="admin_nome" name="admin_nome" autocomplete="name" required minlength="2" maxlength="120">
+                    </label>
+                    <label for="admin_username">Usuário de acesso
+                        <input id="admin_username" name="admin_username" autocomplete="username" required minlength="3" maxlength="80">
+                    </label>
+                    <label for="admin_senha">Senha
+                        <input id="admin_senha" type="password" name="admin_senha" autocomplete="new-password" required minlength="12" maxlength="255">
+                        <span class="hint">Mínimo de 12 caracteres.</span>
+                    </label>
+                    <label for="confirmar_senha">Confirmar senha
+                        <input id="confirmar_senha" type="password" autocomplete="new-password" required minlength="12" maxlength="255">
+                    </label>
+                    <button type="submit" id="botao-enviar">Criar empresa</button>
+                </form>
+                <p class="footer">Já tem uma conta? <a href="/login">Entrar</a></p>
+            </div>
+        </main>
+    </section>
+
+    <script>
+        const form = document.getElementById("form-signup");
+        const botao = document.getElementById("botao-enviar");
+        const erroEl = document.getElementById("mensagem-erro");
+        const sucessoEl = document.getElementById("mensagem-sucesso");
+
+        function mostrarErro(texto) {
+            erroEl.textContent = texto;
+            erroEl.style.display = "block";
+            sucessoEl.style.display = "none";
+        }
+
+        function limparMensagens() {
+            erroEl.style.display = "none";
+            sucessoEl.style.display = "none";
+        }
+
+        form.addEventListener("submit", async (evento) => {
+            evento.preventDefault();
+            limparMensagens();
+
+            const senha = document.getElementById("admin_senha").value;
+            const confirmar = document.getElementById("confirmar_senha").value;
+            if (senha !== confirmar) {
+                mostrarErro("As senhas não coincidem.");
+                return;
+            }
+
+            const payload = {
+                empresa_nome: document.getElementById("empresa_nome").value.trim(),
+                admin_nome: document.getElementById("admin_nome").value.trim(),
+                admin_username: document.getElementById("admin_username").value.trim(),
+                admin_senha: senha,
+            };
+
+            botao.disabled = true;
+            botao.textContent = "Criando...";
+
+            try {
+                const resposta = await fetch("/api/signup", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                const dados = await resposta.json();
+
+                if (!resposta.ok) {
+                    mostrarErro(dados.detail || "Não foi possível concluir o cadastro.");
+                    return;
+                }
+
+                sucessoEl.textContent = "Empresa criada com sucesso! Redirecionando para o login...";
+                sucessoEl.style.display = "block";
+                setTimeout(() => { window.location.href = "/login"; }, 1800);
+            } catch (erro) {
+                mostrarErro("Erro de conexão. Tente novamente.");
+            } finally {
+                botao.disabled = false;
+                botao.textContent = "Criar empresa";
+            }
+        });
+    </script>
+</body>
+</html>

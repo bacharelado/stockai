@@ -16,6 +16,7 @@ from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from app import models, schemas
+from app.auth_signup import SignupRequest, criar_nova_empresa_com_admin
 from app.config import (
     ADMIN_PASSWORD,
     ADMIN_USERNAME,
@@ -86,7 +87,7 @@ app = FastAPI(
     docs_url=None if IS_PRODUCTION else "/docs",
     redoc_url=None if IS_PRODUCTION else "/redoc",
     openapi_url=None if IS_PRODUCTION else "/openapi.json",
-    description="Sistema de controle de estoque com dashboard, alertas e movimentações.",
+    description="Sistema de controle de estoque com dashboard, alertas e movimentacoes.",
 )
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
 app.add_middleware(
@@ -131,7 +132,7 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
         db.close()
     if not valido:
         return templates.TemplateResponse(
-            request=request, name="login.html", context={"error": "Credenciais inválidas."}, status_code=401
+            request=request, name="login.html", context={"error": "Credenciais invalidas."}, status_code=401
         )
     request.session.clear()
     request.session["authenticated"] = True
@@ -145,7 +146,20 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
 def logout(request: Request):
     require_auth(request)
     request.session.clear()
-    return api_response({"message": "Sessão encerrada"})
+    return api_response({"message": "Sessao encerrada"})
+
+
+@app.get("/signup", response_class=HTMLResponse, include_in_schema=False)
+def pagina_signup(request: Request):
+    if request.session.get("authenticated"):
+        return RedirectResponse(url="/dashboard", status_code=303)
+    return templates.TemplateResponse(request=request, name="signup.html")
+
+
+@app.post("/api/signup", include_in_schema=False)
+def signup(dados: SignupRequest, db: Session = Depends(get_db)):
+    resultado = criar_nova_empresa_com_admin(dados, db)
+    return api_response(resultado.model_dump(), 201)
 
 
 @app.exception_handler(HTTPException)
@@ -158,14 +172,14 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     erros_seguros = [
         {
             "loc": list(erro.get("loc", [])),
-            "msg": erro.get("msg", "Dados inválidos"),
+            "msg": erro.get("msg", "Dados invalidos"),
             "type": erro.get("type", "value_error"),
         }
         for erro in exc.errors()
     ]
     return JSONResponse(
         status_code=422,
-        content={"success": False, "data": {"detail": "Dados inválidos", "errors": erros_seguros}},
+        content={"success": False, "data": {"detail": "Dados invalidos", "errors": erros_seguros}},
     )
 
 
@@ -175,7 +189,7 @@ async def protecoes_http(request: Request, call_next):
     now = time.monotonic()
     requests = [item for item in _rate_limits.get(client, []) if now - item < RATE_LIMIT_WINDOW_SECONDS]
     if len(requests) >= RATE_LIMIT_MAX_REQUESTS:
-        return JSONResponse(status_code=429, content={"detail": "Muitas requisições. Tente novamente em instantes."})
+        return JSONResponse(status_code=429, content={"detail": "Muitas requisicoes. Tente novamente em instantes."})
     requests.append(now)
     _rate_limits[client] = requests
 
@@ -183,9 +197,9 @@ async def protecoes_http(request: Request, call_next):
     if content_length:
         try:
             if int(content_length) > 1_000_000:
-                return JSONResponse(status_code=413, content={"detail": "Requisição muito grande"})
+                return JSONResponse(status_code=413, content={"detail": "Requisicao muito grande"})
         except ValueError:
-            return JSONResponse(status_code=400, content={"detail": "Cabeçalho inválido"})
+            return JSONResponse(status_code=400, content={"detail": "Cabecalho invalido"})
 
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -231,13 +245,13 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> models.
 
 def require_admin(usuario: models.Usuario = Depends(get_current_user)) -> models.Usuario:
     if usuario.perfil != "admin":
-        raise HTTPException(status_code=403, detail="PermissÃ£o insuficiente")
+        raise HTTPException(status_code=403, detail="Permissao insuficiente")
     return usuario
 
 
 def require_management(usuario: models.Usuario = Depends(get_current_user)) -> models.Usuario:
     if usuario.perfil not in {"admin", "gerente"}:
-        raise HTTPException(status_code=403, detail="PermissÃ£o insuficiente")
+        raise HTTPException(status_code=403, detail="Permissao insuficiente")
     return usuario
 
 
@@ -254,14 +268,14 @@ def health_check():
 @app.post("/produtos", dependencies=[Depends(require_auth)])
 def criar_produto(produto: schemas.ProdutoCreate, usuario: models.Usuario = Depends(require_management), db: Session = Depends(get_db)):
     if not math.isfinite(produto.preco):
-        raise HTTPException(status_code=400, detail="Valores do produto não podem ser negativos")
+        raise HTTPException(status_code=400, detail="Valores do produto nao podem ser negativos")
     try:
         nome_limpo, categoria_limpa = validar_nome_e_categoria(produto.nome, produto.categoria)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     codigo_barras = (produto.codigo_barras or "").strip() or None
     if codigo_barras and db.query(models.Produto).filter(models.Produto.empresa_id == usuario.empresa_id, models.Produto.codigo_barras == codigo_barras).first():
-        raise HTTPException(status_code=409, detail="Código de barras já cadastrado")
+        raise HTTPException(status_code=409, detail="Codigo de barras ja cadastrado")
 
     novo = models.Produto(
         empresa_id=usuario.empresa_id,
@@ -285,9 +299,9 @@ def criar_produto(produto: schemas.ProdutoCreate, usuario: models.Usuario = Depe
 def atualizar_produto(produto_id: int, dados: schemas.ProdutoUpdate, usuario: models.Usuario = Depends(require_management), db: Session = Depends(get_db)):
     produto = buscar_produto_db(db, usuario.empresa_id, produto_id)
     if not produto:
-        raise HTTPException(status_code=404, detail="Produto não encontrado")
+        raise HTTPException(status_code=404, detail="Produto nao encontrado")
     if not math.isfinite(dados.preco):
-        raise HTTPException(status_code=400, detail="Dados do produto inválidos")
+        raise HTTPException(status_code=400, detail="Dados do produto invalidos")
     try:
         nome_limpo, categoria_limpa = validar_nome_e_categoria(dados.nome, dados.categoria)
     except ValueError as exc:
@@ -298,7 +312,7 @@ def atualizar_produto(produto_id: int, dados: schemas.ProdutoUpdate, usuario: mo
         models.Produto.codigo_barras == codigo_barras,
         models.Produto.id != produto_id,
     ).first():
-        raise HTTPException(status_code=409, detail="Código de barras já cadastrado")
+        raise HTTPException(status_code=409, detail="Codigo de barras ja cadastrado")
 
     produto.nome = nome_limpo
     produto.categoria = categoria_limpa
@@ -316,12 +330,12 @@ def atualizar_produto(produto_id: int, dados: schemas.ProdutoUpdate, usuario: mo
 def excluir_produto(produto_id: int, usuario: models.Usuario = Depends(require_management), db: Session = Depends(get_db)):
     produto = buscar_produto_db(db, usuario.empresa_id, produto_id)
     if not produto:
-        raise HTTPException(status_code=404, detail="Produto não encontrado")
+        raise HTTPException(status_code=404, detail="Produto nao encontrado")
     db.query(models.Movimentacao).filter(models.Movimentacao.produto_id == produto_id, models.Movimentacao.empresa_id == usuario.empresa_id).delete()
     registrar_auditoria(db, usuario.empresa_id, usuario.id, "excluir", "produto", produto.id, {"nome": produto.nome})
     db.delete(produto)
     db.commit()
-    return api_response({"message": "Produto excluído com sucesso"})
+    return api_response({"message": "Produto excluido com sucesso"})
 
 
 @app.get("/produtos", dependencies=[Depends(require_auth)])
@@ -334,7 +348,7 @@ def listar_produtos(usuario: models.Usuario = Depends(get_current_user), db: Ses
 def registrar_entrada(produto_id: int, mov: schemas.MovimentacaoCreate, usuario: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     produto = buscar_produto_db(db, usuario.empresa_id, produto_id)
     if not produto:
-        raise HTTPException(status_code=404, detail="Produto não encontrado")
+        raise HTTPException(status_code=404, detail="Produto nao encontrado")
     if mov.quantidade <= 0:
         raise HTTPException(status_code=400, detail="Quantidade deve ser maior que zero")
     db.execute(
@@ -353,7 +367,7 @@ def registrar_entrada(produto_id: int, mov: schemas.MovimentacaoCreate, usuario:
 def registrar_saida(produto_id: int, mov: schemas.MovimentacaoCreate, usuario: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     produto = buscar_produto_db(db, usuario.empresa_id, produto_id)
     if not produto:
-        raise HTTPException(status_code=404, detail="Produto não encontrado")
+        raise HTTPException(status_code=404, detail="Produto nao encontrado")
     if mov.quantidade <= 0:
         raise HTTPException(status_code=400, detail="Quantidade deve ser maior que zero")
     result = db.execute(
@@ -391,7 +405,7 @@ def listar_movimentacoes(usuario: models.Usuario = Depends(get_current_user), db
 def exportar_produtos(usuario: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     arquivo = StringIO()
     escritor = csv.writer(arquivo)
-    escritor.writerow(["ID", "Produto", "Categoria", "Preço", "Estoque atual", "Estoque mínimo", "Status"])
+    escritor.writerow(["ID", "Produto", "Categoria", "Preco", "Estoque atual", "Estoque minimo", "Status"])
     for produto in listar_produtos_db(db, usuario.empresa_id):
         dados = produto_to_out(produto)
         escritor.writerow([
@@ -447,7 +461,7 @@ def listar_usuarios(usuario: models.Usuario = Depends(require_admin), db: Sessio
 def criar_usuario(dados: schemas.UsuarioCreate, usuario: models.Usuario = Depends(require_admin), db: Session = Depends(get_db)):
     username = dados.username.strip().lower()
     if db.query(models.Usuario).filter(models.Usuario.username == username).first():
-        raise HTTPException(status_code=409, detail="Usuário já existe")
+        raise HTTPException(status_code=409, detail="Usuario ja existe")
     novo = models.Usuario(
         empresa_id=usuario.empresa_id,
         nome=dados.nome.strip(),
@@ -472,7 +486,7 @@ def listar_filiais(usuario: models.Usuario = Depends(get_current_user), db: Sess
 def criar_filial(dados: schemas.FilialCreate, usuario: models.Usuario = Depends(require_management), db: Session = Depends(get_db)):
     nome = dados.nome.strip()
     if db.query(models.Filial).filter(models.Filial.empresa_id == usuario.empresa_id, models.Filial.nome == nome).first():
-        raise HTTPException(status_code=409, detail="Filial já cadastrada")
+        raise HTTPException(status_code=409, detail="Filial ja cadastrada")
     filial = models.Filial(empresa_id=usuario.empresa_id, nome=nome)
     db.add(filial)
     db.flush()
@@ -491,7 +505,7 @@ def listar_fornecedores(usuario: models.Usuario = Depends(get_current_user), db:
 def criar_fornecedor(dados: schemas.FornecedorCreate, usuario: models.Usuario = Depends(require_management), db: Session = Depends(get_db)):
     documento = (dados.documento or "").strip() or None
     if documento and db.query(models.Fornecedor).filter(models.Fornecedor.empresa_id == usuario.empresa_id, models.Fornecedor.documento == documento).first():
-        raise HTTPException(status_code=409, detail="Fornecedor com este documento já existe")
+        raise HTTPException(status_code=409, detail="Fornecedor com este documento ja existe")
     fornecedor = models.Fornecedor(
         empresa_id=usuario.empresa_id,
         nome=dados.nome.strip(),
@@ -504,4 +518,3 @@ def criar_fornecedor(dados: schemas.FornecedorCreate, usuario: models.Usuario = 
     registrar_auditoria(db, usuario.empresa_id, usuario.id, "criar", "fornecedor", fornecedor.id, {"nome": fornecedor.nome})
     db.commit()
     return api_response({"id": fornecedor.id, "nome": fornecedor.nome, "documento": fornecedor.documento, "email": fornecedor.email, "telefone": fornecedor.telefone, "ativo": fornecedor.ativo}, 201)
- 
