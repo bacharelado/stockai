@@ -1,4 +1,5 @@
 import csv
+from contextlib import asynccontextmanager
 import math
 import secrets
 import time
@@ -42,8 +43,6 @@ from app.services import (
 )
 
 validate_settings()
-if AUTO_CREATE_SCHEMA:
-    create_tables()
 
 
 def bootstrap_conta_inicial() -> None:
@@ -79,7 +78,13 @@ def bootstrap_conta_inicial() -> None:
         db.close()
 
 
-bootstrap_conta_inicial()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if AUTO_CREATE_SCHEMA:
+        create_tables()
+    bootstrap_conta_inicial()
+    yield
+
 
 app = FastAPI(
     title="StockAI",
@@ -88,6 +93,7 @@ app = FastAPI(
     redoc_url=None if IS_PRODUCTION else "/redoc",
     openapi_url=None if IS_PRODUCTION else "/openapi.json",
     description="Sistema de controle de estoque com dashboard, alertas e movimentacoes.",
+    lifespan=lifespan,
 )
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
 app.add_middleware(
