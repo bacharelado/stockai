@@ -14,6 +14,7 @@ StockAI é um sistema web de controle de estoque para pequenos negócios, lojas 
 - Tema claro e escuro
 - Exportação da lista de produtos em CSV
 - Login administrativo com sessão e proteção CSRF
+- Cadastro público de novas empresas (multi-tenant)
 - Menus e ações condicionados ao perfil do usuário
 - Área administrativa com usuários da empresa
 - Encerramento de sessão pelo botão Sair
@@ -50,6 +51,8 @@ Edite o arquivo `.env` e defina valores fortes e exclusivos para:
 
 O primeiro início cria a empresa principal e migra os produtos e movimentações existentes para ela. O administrador informado no `.env` é convertido em um usuário persistido com senha armazenada em hash.
 
+Novas empresas também podem se cadastrar de forma independente pela rota `/signup`, sem precisar reiniciar o sistema ou editar o `.env` (veja a seção "Execução").
+
 ## PostgreSQL e migrações
 
 Para produção, crie o banco PostgreSQL e defina no `.env`:
@@ -84,6 +87,7 @@ Abra no navegador:
 
 - http://localhost:8000/login
 - http://localhost:8000/dashboard
+- http://localhost:8000/signup (cadastro de nova empresa)
 
 Em desenvolvimento, a documentação da API fica em `http://localhost:8000/docs`.
 Ela é desativada em produção.
@@ -122,6 +126,7 @@ As permissões também são verificadas no backend. Ocultar uma ação no menu n
 ```text
 app/
   __init__.py
+  auth_signup.py
   config.py
   static/
     dashboard.css
@@ -130,6 +135,7 @@ app/
   templates/
     partials/
     dashboard.html
+    signup.html
   database.py
   main.py
   models.py

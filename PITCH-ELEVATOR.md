@@ -6,13 +6,13 @@ O StockAI é um sistema simples e seguro para pequenos negócios controlarem seu
 
 Com ele, a equipe cadastra produtos, registra entradas e saídas, acompanha alertas de estoque baixo e consulta o histórico das movimentações em um único painel.
 
-Cada usuário acessa apenas as funções compatíveis com seu perfil, enquanto a empresa mantém seus dados organizados e protegidos por login, controle de permissões e isolamento entre empresas.
+Cada usuário acessa apenas as funções compatíveis com seu perfil, enquanto a empresa mantém seus dados organizados e protegidos por login, controle de permissões e isolamento entre empresas. Uma nova empresa pode começar a usar o sistema em minutos, criando sua própria conta sem precisar de instalação separada.
 
 **StockAI: mais controle sobre o estoque, menos desperdício e decisões mais rápidas.**
 
 ## Versão de 30 segundos
 
-"O StockAI ajuda pequenos negócios a controlar o estoque de forma simples, segura e organizada. Em vez de depender de planilhas espalhadas, a equipe acompanha produtos, quantidades, entradas, saídas e alertas em um painel único. O sistema também diferencia as funções de operadores, gerentes e administradores, garantindo que cada pessoa tenha o acesso adequado. Assim, o negócio reduz erros, evita falta de produtos e toma decisões com mais confiança."
+"O StockAI ajuda pequenos negócios a controlar o estoque de forma simples, segura e organizada. Em vez de depender de planilhas espalhadas, a equipe acompanha produtos, quantidades, entradas, saídas e alertas em um painel único. O sistema também diferencia as funções de operadores, gerentes e administradores, garantindo que cada pessoa tenha o acesso adequado. Uma nova empresa cria sua conta em poucos minutos, com seus dados totalmente isolados dos demais clientes. Assim, o negócio reduz erros, evita falta de produtos e toma decisões com mais confiança."
 
 ## Para quem é
 
@@ -29,6 +29,7 @@ Cada usuário acessa apenas as funções compatíveis com seu perfil, enquanto a
 - Controle de acesso por perfil de usuário
 - Exportação da lista de produtos
 - Acesso pelo navegador, no computador ou celular
+- Cadastro de nova empresa em poucos minutos, sem instalação
 
 ## Chamada comercial
 
