@@ -1,0 +1,26 @@
+:root {
+    --stockai-blue: #245BA7;
+    --stockai-blue-dark: #173F7A;
+    --stockai-blue-soft: #EAF2FB;
+    --stockai-yellow: #F0C85A;
+    --stockai-green: #2F8F5B;
+}
+
+/* Identidade StockAI inspirada na paleta institucional do Amazonas/UEA, sem copiar a marca institucional. */
+body::selection { background: var(--stockai-blue); color: #fff; }
+.primary, button.primary { background: var(--stockai-blue) !important; }
+.primary:hover, .primary:focus-visible { background: var(--stockai-blue-dark) !important; }
+.eyebrow, .stat-icon, .insight-icon, .nav-icon, .status-ok { color: var(--stockai-blue) !important; }
+.nav a.active, .nav a:hover, .nav a:focus-visible { background: var(--stockai-blue-dark) !important; }
+.nav-icon { color: var(--stockai-yellow) !important; }
+.sidebar { background: linear-gradient(180deg, #173F7A 0%, #143B3D 100%) !important; }
+.stat.alert .stat-icon, .stat.alert .stat-number, .status-baixo, .danger-text { color: #D95F4D !important; }
+.chart-dot.ok { background: var(--stockai-blue) !important; }
+.status-ok { background: var(--stockai-blue-soft) !important; }
+.chart-summary-item, .getting-started-action:hover, .getting-started-action:focus-visible,
+tbody tr:hover, tbody tr:focus-within, .filter:focus, .search:focus { background: var(--stockai-blue-soft) !important; }
+.getting-started-icon, .insight-icon { color: var(--stockai-blue) !important; background: var(--stockai-blue-soft) !important; }
+.getting-started-badge { color: var(--stockai-blue-dark) !important; border: 1px solid #D6E4F4; }
+.panel, .stat { box-shadow: 0 18px 45px rgba(23, 63, 122, .08) !important; }
+.sidebar-footer { border-top-color: rgba(240,200,90,.35) !important; }
+.sidebar-footer a:hover { color: var(--stockai-yellow) !important; }
