@@ -5,46 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Entrar | StockAI</title>
     <style>
-        :root { color: #173b37; font-family: "Segoe UI", Arial, sans-serif; }
+        :root { color: #172554; font-family: "Segoe UI", Arial, sans-serif; }
         * { box-sizing: border-box; }
-        body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; overflow: hidden; background: #e8f2ef; }
+        body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; overflow: hidden; background: #eef3fb; }
         body::before, body::after { content: ""; position: fixed; border-radius: 50%; z-index: -1; filter: blur(1px); }
-        body::before { width: 520px; height: 520px; top: -250px; left: -160px; background: #8ed8c9; opacity: .63; animation: float-a 9s ease-in-out infinite; }
-        body::after { width: 460px; height: 460px; right: -160px; bottom: -210px; background: #a7d4ee; opacity: .65; animation: float-b 11s ease-in-out infinite; }
-        .layout { width: min(100%, 900px); min-height: 570px; display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #ffffffa8; border-radius: 24px; overflow: hidden; background: #fff; box-shadow: 0 26px 70px #173b3729; animation: card-in .7s cubic-bezier(.2,.8,.2,1) both; }
-        .intro { position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 46px; overflow: hidden; color: white; background: linear-gradient(145deg, #075f5a, #0b877d); animation: intro-in .8s .08s cubic-bezier(.2,.8,.2,1) both; }
-        .intro::after { content: ""; position: absolute; width: 280px; height: 280px; right: -145px; bottom: -130px; border: 36px solid #78d2c2; border-radius: 50%; opacity: .35; animation: ring-float 8s ease-in-out infinite; }
+        body::before { width: 520px; height: 520px; top: -250px; left: -160px; background: #7aa7dc; opacity: .32; animation: float-a 9s ease-in-out infinite; }
+        body::after { width: 460px; height: 460px; right: -160px; bottom: -210px; background: #f0c85a; opacity: .22; animation: float-b 11s ease-in-out infinite; }
+        .layout { width: min(100%, 900px); min-height: 570px; display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #ffffffc7; border-radius: 24px; overflow: hidden; background: #fff; box-shadow: 0 26px 70px #17255424; animation: card-in .7s cubic-bezier(.2,.8,.2,1) both; }
+        .intro { position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 46px; overflow: hidden; color: white; background: linear-gradient(145deg, #173f7a, #2466ad); animation: intro-in .8s .08s cubic-bezier(.2,.8,.2,1) both; }
+        .intro::after { content: ""; position: absolute; width: 280px; height: 280px; right: -145px; bottom: -130px; border: 36px solid #f0c85a; border-radius: 50%; opacity: .28; animation: ring-float 8s ease-in-out infinite; }
         .brand { display: flex; align-items: center; gap: 11px; font-weight: 800; font-size: 21px; letter-spacing: -.5px; animation: fade-up .65s .2s both; }
-        .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid #a8e3d9; border-radius: 10px; font-size: 18px; transition: transform .25s ease, background .25s ease; }
+        .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid #dceaff; border-radius: 10px; font-size: 18px; transition: transform .25s ease, background .25s ease; }
         .brand:hover .brand-mark { transform: rotate(-6deg) scale(1.06); background: #ffffff14; }
         .intro h1 { max-width: 290px; margin: 0; font-size: clamp(31px, 4vw, 43px); line-height: 1.08; letter-spacing: -1.8px; animation: fade-up .7s .32s both; }
-        .intro p { max-width: 285px; margin: 16px 0 0; color: #d1f0eb; line-height: 1.55; animation: fade-up .7s .42s both; }
-        .secure-note { position: relative; z-index: 1; display: flex; align-items: center; gap: 9px; color: #c9eee8; font-size: 13px; animation: fade-up .7s .5s both; }
+        .intro p { max-width: 285px; margin: 16px 0 0; color: #e1ebf8; line-height: 1.55; animation: fade-up .7s .42s both; }
+        .secure-note { position: relative; z-index: 1; display: flex; align-items: center; gap: 9px; color: #e4edf9; font-size: 13px; animation: fade-up .7s .5s both; }
         .secure-note span { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 50%; background: #ffffff20; animation: soft-pulse 2.6s ease-in-out infinite; }
         main { display: flex; align-items: center; padding: 48px; }
         .form-wrap { width: 100%; max-width: 310px; margin: auto; animation: fade-up .7s .18s both; }
-        .eyebrow { margin: 0 0 9px; color: #087f78; font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
-        h2 { margin: 0; color: #173b37; font-size: 28px; letter-spacing: -1px; }
-        .lead { margin: 10px 0 28px; color: #66807b; font-size: 14px; line-height: 1.5; }
-        label { display: block; margin-top: 17px; color: #36504b; font-size: 13px; font-weight: 750; animation: fade-up .55s .35s both; }
-        input { width: 100%; margin-top: 7px; padding: 12px 13px; outline: none; color: #173b37; border: 1px solid #c9d8d4; border-radius: 10px; background: #fbfdfc; font: inherit; transition: border .18s, box-shadow .18s, transform .18s; }
-        input:focus { border-color: #087f78; box-shadow: 0 0 0 4px #0a82791a; transform: translateY(-1px); }
-        button { width: 100%; margin-top: 27px; padding: 13px; border: 0; border-radius: 10px; color: white; background: #087f78; box-shadow: 0 8px 18px #087f7833; font: 750 14px inherit; cursor: pointer; transition: transform .18s, background .18s, box-shadow .18s; animation: fade-up .55s .48s both; }
-        button:hover { background: #066d67; transform: translateY(-2px); box-shadow: 0 12px 24px #087f7838; }
+        .eyebrow { margin: 0 0 9px; color: #245f9f; font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+        h2 { margin: 0; color: #172554; font-size: 28px; letter-spacing: -1px; }
+        .lead { margin: 10px 0 28px; color: #64748b; font-size: 14px; line-height: 1.5; }
+        label { display: block; margin-top: 17px; color: #334155; font-size: 13px; font-weight: 750; animation: fade-up .55s .35s both; }
+        input { width: 100%; margin-top: 7px; padding: 12px 13px; outline: none; color: #172554; border: 1px solid #cbd5e1; border-radius: 10px; background: #fbfdff; font: inherit; transition: border .18s, box-shadow .18s, transform .18s; }
+        input:focus { border-color: #2466ad; box-shadow: 0 0 0 4px #2466ad1a; transform: translateY(-1px); }
+        button { width: 100%; margin-top: 27px; padding: 13px; border: 0; border-radius: 10px; color: white; background: #245f9f; box-shadow: 0 8px 18px #245f9f33; font: 750 14px inherit; cursor: pointer; transition: transform .18s, background .18s, box-shadow .18s; animation: fade-up .55s .48s both; }
+        button:hover { background: #194d85; transform: translateY(-2px); box-shadow: 0 12px 24px #245f9f38; }
         button:active { transform: translateY(0); }
-        button:focus-visible { outline: 3px solid #75c9c0; outline-offset: 2px; }
+        button:focus-visible { outline: 3px solid #f0c85a; outline-offset: 2px; }
         .error { margin: 0 0 18px; padding: 11px 12px; color: #9d251d; border: 1px solid #ffc4bd; border-radius: 9px; background: #fff0ee; font-size: 13px; animation: shake-in .45s both; }
-        .signup-link { margin: 18px 0 0; color: #66807b; font-size: 13px; text-align: center; animation: fade-up .55s .55s both; }
-        .signup-link a { color: #087f78; font-weight: 750; text-decoration: none; }
+        .signup-link { margin: 18px 0 0; color: #64748b; font-size: 13px; text-align: center; animation: fade-up .55s .55s both; }
+        .signup-link a { color: #245f9f; font-weight: 750; text-decoration: none; }
         .signup-link a:hover { text-decoration: underline; }
-        .footer { display: grid; gap: 9px; margin: 22px 0 0; padding: 14px; color: #80948f; border: 1px solid #dfe9e7; border-radius: 12px; background: #f7faf9; font-size: 11px; text-align: center; line-height: 1.45; animation: fade-up .6s .62s both; }
-        .footer-title { color: #36504b; font-size: 11px; font-weight: 750; }
+        .footer { display: grid; gap: 9px; margin: 22px 0 0; padding: 14px; color: #8090a5; border: 1px solid #dbe3ed; border-radius: 12px; background: #f7f9fc; font-size: 11px; text-align: center; line-height: 1.45; animation: fade-up .6s .62s both; }
+        .footer-title { color: #334155; font-size: 11px; font-weight: 750; }
         .footer-contact { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; }
-        .footer-contact a { color: #087f78; font-weight: 700; text-decoration: none; }
+        .footer-contact a { color: #245f9f; font-weight: 700; text-decoration: none; }
         .footer-contact a:hover { text-decoration: underline; }
         .whatsapp-button { display: inline-flex; width: 100%; align-items: center; justify-content: center; gap: 7px; padding: 10px 12px; border-radius: 9px; color: #fff !important; background: #128c5a; box-shadow: 0 7px 16px rgba(18, 140, 90, .18); font-size: 12px; font-weight: 750 !important; text-decoration: none !important; transition: transform .18s, background .18s, box-shadow .18s; animation: whatsapp-pulse 2.8s 1.5s ease-in-out infinite; }
         .whatsapp-button:hover { background: #0d7449; transform: translateY(-2px); box-shadow: 0 11px 22px rgba(18, 140, 90, .25); animation-play-state: paused; }
-        .footer-brand { color: #9aa9a5; font-size: 10px; }
+        .footer-brand { color: #94a3b8; font-size: 10px; }
         @keyframes card-in { from { opacity: 0; transform: translateY(20px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes intro-in { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -67,9 +67,9 @@
         </aside>
         <main>
             <div class="form-wrap">
-                <p class="eyebrow">Acesso restrito</p>
+                <p class="eyebrow">Tecnologia do Amazonas</p>
                 <h2>Boas-vindas</h2>
-                <p class="lead">Informe suas credenciais para acessar o painel.</p>
+                <p class="lead">Entre para cuidar do seu estoque de forma simples e inteligente.</p>
                 {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
                 <form method="post" action="/login">
                     <label for="username">Usuário<input id="username" name="username" autocomplete="username" autofocus required></label>
