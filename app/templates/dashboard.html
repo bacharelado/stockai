@@ -24,12 +24,13 @@
         .getting-started-action strong { display: block; font-size: 12px; }
         .getting-started-action span { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.3; }
         .insights { margin-bottom: 20px; }
-        .insights-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .insights-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
         .insight-card { min-height: 112px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); }
         .insight-label { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
         .insight-icon { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; color: var(--teal); background: var(--teal-soft); }
         .insight-value { margin-top: 13px; color: var(--ink); font-family: "Space Grotesk", sans-serif; font-size: 18px; font-weight: 700; line-height: 1.15; }
         .insight-note { margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+        @media (max-width: 1050px) { .insights-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 850px) { .getting-started-grid, .insights-grid { grid-template-columns: 1fr; } .getting-started-head { flex-direction: column; gap: 10px; } }
     </style>
 </head>
@@ -115,6 +116,11 @@
                         <div class="insight-value" id="insight-value">R$ 0,00</div>
                         <div class="insight-note" id="insight-value-note">Valor atual do estoque.</div>
                     </article>
+                    <article class="insight-card">
+                        <div class="insight-label"><span>Reposição</span><span class="insight-icon">↻</span></div>
+                        <div class="insight-value" id="insight-replenishment">0 unidades</div>
+                        <div class="insight-note" id="insight-replenishment-note">Nenhuma reposição sugerida.</div>
+                    </article>
                 </div>
             </section>
 
@@ -170,6 +176,6 @@
     <script id="initial-products" type="application/json">{{ produtos|tojson }}</script>
     <script id="user-permissions" type="application/json">{{ {"canManage": pode_gerenciar}|tojson }}</script>
     <script src="/static/dashboard.js?v=2" defer></script>
-    <script src="/static/dashboard-insights.js?v=1" defer></script>
+    <script src="/static/dashboard-insights.js?v=2" defer></script>
 </body>
 </html>
