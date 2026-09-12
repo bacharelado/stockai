@@ -32,6 +32,9 @@
         button:hover { background: #066d67; transform: translateY(-1px); }
         button:focus-visible { outline: 3px solid #75c9c0; outline-offset: 2px; }
         .error { margin: 0 0 18px; padding: 11px 12px; color: #9d251d; border: 1px solid #ffc4bd; border-radius: 9px; background: #fff0ee; font-size: 13px; }
+        .signup-link { margin: 18px 0 0; color: #66807b; font-size: 13px; text-align: center; }
+        .signup-link a { color: #087f78; font-weight: 750; text-decoration: none; }
+        .signup-link a:hover { text-decoration: underline; }
         .footer { margin: 22px 0 0; color: #80948f; font-size: 12px; text-align: center; }
         @media (max-width: 680px) { body { padding: 16px; overflow: auto; } .layout { min-height: auto; grid-template-columns: 1fr; } .intro { min-height: 205px; padding: 28px; } .intro h1 { margin-top: 28px; font-size: 29px; } .intro p, .secure-note { display: none; } main { padding: 34px 27px; } }
     </style>
@@ -54,6 +57,7 @@
                     <label for="password">Senha<input id="password" type="password" name="password" autocomplete="current-password" required></label>
                     <button type="submit">Entrar no painel</button>
                 </form>
+                <p class="signup-link">Ainda não tem uma conta? <a href="/signup">Criar empresa e administrador</a></p>
                 <p class="footer">StockAI · Controle de estoque</p>
             </div>
         </main>
