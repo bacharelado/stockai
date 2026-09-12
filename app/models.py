@@ -17,6 +17,8 @@ class Empresa(Base):
     nome = Column(String(120), nullable=False)
     documento = Column(String(32), unique=True, nullable=True)
     ativa = Column(Boolean, nullable=False, default=True)
+    plano = Column(String(24), nullable=False, default="gratuito")
+    status_assinatura = Column(String(24), nullable=False, default="ativa")
     criada_em = Column(DateTime(timezone=True), nullable=False, default=agora_utc)
 
     usuarios = relationship("Usuario", back_populates="empresa")
@@ -33,6 +35,7 @@ class Usuario(Base):
     password_hash = Column(String(255), nullable=False)
     perfil = Column(String(24), nullable=False, default="operador")
     ativo = Column(Boolean, nullable=False, default=True)
+    plataforma_admin = Column(Boolean, nullable=False, default=False)
     criado_em = Column(DateTime(timezone=True), nullable=False, default=agora_utc)
     atualizado_em = Column(DateTime(timezone=True), nullable=False, default=agora_utc, onupdate=agora_utc)
 
