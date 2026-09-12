@@ -35,9 +35,14 @@
         .signup-link { margin: 18px 0 0; color: #66807b; font-size: 13px; text-align: center; }
         .signup-link a { color: #087f78; font-weight: 750; text-decoration: none; }
         .signup-link a:hover { text-decoration: underline; }
-        .footer { margin: 22px 0 0; color: #80948f; font-size: 12px; text-align: center; line-height: 1.6; }
-        .footer a { color: #087f78; font-weight: 700; text-decoration: none; }
-        .footer a:hover { text-decoration: underline; }
+        .footer { display: grid; gap: 9px; margin: 22px 0 0; padding: 14px; color: #80948f; border: 1px solid #dfe9e7; border-radius: 12px; background: #f7faf9; font-size: 11px; text-align: center; line-height: 1.45; }
+        .footer-title { color: #36504b; font-size: 11px; font-weight: 750; }
+        .footer-contact { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; }
+        .footer-contact a { color: #087f78; font-weight: 700; text-decoration: none; }
+        .footer-contact a:hover { text-decoration: underline; }
+        .whatsapp-button { display: inline-flex; width: 100%; align-items: center; justify-content: center; gap: 7px; padding: 10px 12px; border-radius: 9px; color: #fff !important; background: #128c5a; box-shadow: 0 7px 16px rgba(18, 140, 90, .18); font-size: 12px; font-weight: 750 !important; text-decoration: none !important; transition: transform .18s, background .18s; }
+        .whatsapp-button:hover { background: #0d7449; transform: translateY(-1px); text-decoration: none !important; }
+        .footer-brand { color: #9aa9a5; font-size: 10px; }
         @media (max-width: 680px) { body { padding: 16px; overflow: auto; } .layout { min-height: auto; grid-template-columns: 1fr; } .intro { min-height: 205px; padding: 28px; } .intro h1 { margin-top: 28px; font-size: 29px; } .intro p, .secure-note { display: none; } main { padding: 34px 27px; } }
     </style>
 </head>
@@ -60,7 +65,12 @@
                     <button type="submit">Entrar no painel</button>
                 </form>
                 <p class="signup-link">Ainda não tem uma conta? <a href="/signup">Criar empresa e administrador</a></p>
-                <p class="footer">StockAI · Controle de estoque<br />Precisa de ajuda? <a href="tel:+559281660856">(92) 8166-0856</a> · <a href="mailto:agstarker@gmail.com">agstarker@gmail.com</a></p>
+                <div class="footer" aria-label="Contato do suporte">
+                    <span class="footer-title">Precisa de ajuda?</span>
+                    <a class="whatsapp-button" href="https://wa.me/559281660856?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20StockAI." target="_blank" rel="noopener noreferrer">💬 Falar com o suporte no WhatsApp</a>
+                    <div class="footer-contact"><a href="tel:+559281660856">📞 (92) 8166-0856</a><span aria-hidden="true">·</span><a href="mailto:agstarker@gmail.com">✉ agstarker@gmail.com</a></div>
+                    <span class="footer-brand">StockAI · Controle de estoque</span>
+                </div>
             </div>
         </main>
     </section>
