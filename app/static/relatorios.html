@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="" />
+    <title>StockAI | Relatórios</title>
+    <style>
+        :root { color-scheme: light; --bg:#f5f7fa; --card:#fff; --ink:#17212b; --muted:#667085; --line:#e4e7ec; --accent:#087f78; --danger:#d95f4d; }
+        * { box-sizing:border-box; } body { margin:0; font-family:Arial,sans-serif; background:var(--bg); color:var(--ink); }
+        .wrap { max-width:1100px; margin:0 auto; padding:28px 18px 50px; }
+        .top { display:flex; justify-content:space-between; align-items:center; gap:15px; margin-bottom:24px; }
+        .brand { display:flex; align-items:center; gap:12px; } .brand img { width:54px; height:54px; object-fit:contain; }
+        h1,h2,p { margin:0; } h1 { font-size:25px; } .muted { color:var(--muted); margin-top:5px; font-size:13px; }
+        .actions { display:flex; gap:8px; flex-wrap:wrap; } button,a.btn { border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:9px; padding:10px 13px; text-decoration:none; cursor:pointer; font-weight:700; font-size:12px; }
+        .primary { background:var(--accent); color:#fff !important; border-color:var(--accent) !important; }
+        .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+        .card { background:var(--card); border:1px solid var(--line); border-radius:13px; padding:17px; box-shadow:0 5px 20px rgba(16,24,40,.04); }
+        .label { color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; } .value { font-size:24px; font-weight:800; margin-top:10px; }
+        .layout { display:grid; grid-template-columns:1fr 1fr; gap:15px; } .wide { grid-column:1/-1; }
+        table { width:100%; border-collapse:collapse; margin-top:13px; font-size:12px; } th,td { padding:11px 8px; border-bottom:1px solid var(--line); text-align:left; } th { color:var(--muted); }
+        .status-low { color:var(--danger); font-weight:700; } .status-ok { color:var(--accent); font-weight:700; }
+        .empty { color:var(--muted); padding:18px 0; font-size:13px; } .loading { opacity:.65; }
+        @media(max-width:800px){ .grid,.layout { grid-template-columns:1fr 1fr; } .wide { grid-column:auto; } }
+        @media(max-width:560px){ .grid,.layout { grid-template-columns:1fr; } .top { align-items:flex-start; flex-direction:column; } }
+    </style>
+</head>
+<body>
+<div class="wrap" id="app">
+    <div class="top">
+        <div class="brand"><img src="/static/stockai-logo.svg" alt="StockAI"><div><h1>Relatórios</h1><p class="muted">Veja rapidamente como está o seu estoque.</p></div></div>
+        <div class="actions"><a class="btn" href="/dashboard">Voltar ao estoque</a><button class="primary" id="download">Baixar CSV</button></div>
+    </div>
+    <section class="grid">
+        <article class="card"><div class="label">Produtos</div><div class="value" id="products">—</div></article>
+        <article class="card"><div class="label">Estoque baixo</div><div class="value" id="low">—</div></article>
+        <article class="card"><div class="label">Itens no estoque</div><div class="value" id="units">—</div></article>
+        <article class="card"><div class="label">Valor do estoque</div><div class="value" id="value">—</div></article>
+    </section>
+    <div class="layout">
+        <section class="card"><h2>Produtos que precisam de atenção</h2><p class="muted">Os produtos com estoque no limite ou abaixo.</p><div id="attention" class="empty">Carregando...</div></section>
+        <section class="card"><h2>Valor por categoria</h2><p class="muted">Quanto cada categoria representa no estoque.</p><div id="categories" class="empty">Carregando...</div></section>
+        <section class="card wide"><h2>Últimas movimentações</h2><p class="muted">Entradas e saídas recentes.</p><div id="movements" class="empty">Carregando...</div></section>
+    </div>
+</div>
+<script src="/static/relatorios.js?v=1" defer></script>
+</body>
+</html>
