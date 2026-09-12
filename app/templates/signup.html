@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Empresa - StockAI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            width: 100%;
+            padding: 40px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .help-text {
+            color: #999;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>StockAI</h1>
+            <p>Crie sua conta e comece a controlar seu estoque</p>
+        </div>
+        
+        <form id="signupForm">
+            <div class="error" id="errorMsg"></div>
+            <div class="success" id="successMsg"></div>
+            
+            <div class="form-group">
+                <label for="nome_empresa">Nome da Empresa</label>
+                <input 
+                    type="text" 
+                    id="nome_empresa" 
+                    name="nome_empresa" 
+                    placeholder="ex: Acme Corp"
+                    minlength="2"
+                    maxlength="120"
+                    required
+                >
+                <div class="help-text">2-120 caracteres</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="nome_admin">Seu Nome (Administrador)</label>
+                <input 
+                    type="text" 
+                    id="nome_admin" 
+                    name="nome_admin" 
+                    placeholder="ex: João Silva"
+                    minlength="2"
+                    maxlength="120"
+                    required
+                >
+            </div>
+            
+            <div class="form-group">
+                <label for="username_admin">Username (Login)</label>
+                <input 
+                    type="text" 
+                    id="username_admin" 
+                    name="username_admin" 
+                    placeholder="ex: joao_silva"
+                    minlength="3"
+                    maxlength="80"
+                    pattern="[a-zA-Z0-9._-]+"
+                    required
+                >
+                <div class="help-text">3-80 caracteres, apenas letras, números, ponto, hífen e underscore</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="senha">Senha</label>
+                <input 
+                    type="password" 
+                    id="senha" 
+                    name="senha" 
+                    placeholder="Mínimo 12 caracteres"
+                    minlength="12"
+                    maxlength="256"
+                    required
+                >
+                <div class="help-text">Mínimo 12 caracteres para segurança</div>
+            </div>
+            
+            <button type="submit" id="submitBtn">Criar Conta</button>
+        </form>
+        
+        <div class="footer">
+            Já tem conta? <a href="/login">Faça login aqui</a>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('signupForm');
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            submitBtn.disabled = true;
+            
+            const dados = {
+                nome_empresa: document.getElementById('nome_empresa').value,
+                nome_admin: document.getElementById('nome_admin').value,
+                username_admin: document.getElementById('username_admin').value,
+                senha: document.getElementById('senha').value,
+            };
+            
+            try {
+                const response = await fetch('/api/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dados)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    successMsg.textContent = 
+                        `✓ ${result.data.mensagem}\n\n` +
+                        `Username: ${result.data.admin_username}`;
+                    successMsg.style.display = 'block';
+                    form.reset();
+                    setTimeout(() => window.location.href = '/login', 3000);
+                } else {
+                    errorMsg.textContent = result.data.detail || 'Erro ao criar conta';
+                    errorMsg.style.display = 'block';
+                    submitBtn.disabled = false;
+                }
+            } catch (err) {
+                errorMsg.textContent = 'Erro de conexão. Tente novamente.';
+                errorMsg.style.display = 'block';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
