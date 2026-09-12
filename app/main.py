@@ -261,9 +261,11 @@ def require_management(usuario: models.Usuario = Depends(get_current_user)) -> m
     return usuario
 
 
-@app.get("/", include_in_schema=False)
-def inicio():
-    return RedirectResponse(url="/dashboard")
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+def inicio(request: Request):
+    if request.session.get("authenticated"):
+        return RedirectResponse(url="/dashboard", status_code=303)
+    return templates.TemplateResponse(request=request, name="landing.html")
 
 
 @app.get("/health")
