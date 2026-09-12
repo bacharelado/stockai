@@ -1,0 +1,107 @@
+<div class="modal-backdrop" id="create-modal">
+    <form class="modal" id="create-form">
+        <div class="modal-head">
+            <div>
+                <p class="eyebrow">Produtos</p>
+                <h2>Novo produto</h2>
+            </div>
+            <button type="button" class="close" data-close="create-modal" aria-label="Fechar">×</button>
+        </div>
+
+        <div class="form-grid">
+            <label class="field">Nome do produto<input name="nome" required maxlength="120" placeholder="Ex.: Café especial" /></label>
+            <label class="field">Categoria<input name="categoria" maxlength="80" placeholder="Ex.: Bebidas" /></label>
+            <div class="form-grid two">
+                <label class="field">Preço (R$)<input name="preco" type="number" min="0" step="0.01" value="0" required /></label>
+                <label class="field">Quantidade inicial<input name="estoque_atual" type="number" min="0" step="1" value="0" required /></label>
+            </div>
+            <label class="field">Quantidade mínima<input name="estoque_minimo" type="number" min="0" step="1" value="0" required /><span class="field-help">O item entra em alerta quando atingir este número ou ficar abaixo dele.</span></label>
+        </div>
+
+        <div class="modal-actions">
+            <button type="button" class="ghost" data-close="create-modal">Cancelar</button>
+            <button class="primary" type="submit">Cadastrar produto</button>
+        </div>
+    </form>
+</div>
+
+<div class="modal-backdrop" id="movement-modal">
+    <form class="modal" id="movement-form">
+        <div class="modal-head">
+            <div>
+                <p class="eyebrow" id="movement-eyebrow">Entrada</p>
+                <h2 id="movement-title">Adicionar estoque</h2>
+            </div>
+            <button type="button" class="close" data-close="movement-modal" aria-label="Fechar">×</button>
+        </div>
+
+        <p class="subtitle" id="movement-product"></p>
+        <label class="field movement-quantity">Quantidade<input name="quantidade" type="number" min="1" step="1" value="1" required /><span class="field-help">Use números inteiros maiores que zero.</span></label>
+
+        <div class="modal-actions">
+            <button type="button" class="ghost" data-close="movement-modal">Cancelar</button>
+            <button class="primary" type="submit">Confirmar</button>
+        </div>
+    </form>
+</div>
+
+<div class="modal-backdrop" id="edit-modal">
+    <form class="modal" id="edit-form">
+        <div class="modal-head">
+            <div>
+                <p class="eyebrow">Produtos</p>
+                <h2>Editar produto</h2>
+            </div>
+            <button type="button" class="close" data-close="edit-modal" aria-label="Fechar">×</button>
+        </div>
+
+        <div class="form-grid">
+            <label class="field">Nome do produto<input name="nome" required maxlength="120" /></label>
+            <label class="field">Categoria<input name="categoria" maxlength="80" /></label>
+            <div class="form-grid two">
+                <label class="field">Preço (R$)<input name="preco" type="number" min="0" step="0.01" required /></label>
+            <label class="field">Quantidade mínima<input name="estoque_minimo" type="number" min="0" step="1" required /><span class="field-help">O item entra em alerta quando atingir este número ou ficar abaixo dele.</span></label>
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button type="button" class="ghost" data-close="edit-modal">Cancelar</button>
+            <button class="primary" type="submit">Salvar alterações</button>
+        </div>
+    </form>
+</div>
+
+<div class="modal-backdrop" id="delete-modal">
+    <section class="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+        <div class="modal-head">
+            <div>
+                <p class="eyebrow danger-text">Ação irreversível</p>
+                <h2 id="delete-title">Excluir produto?</h2>
+            </div>
+            <button type="button" class="close" data-close="delete-modal" aria-label="Fechar">×</button>
+        </div>
+
+        <p class="subtitle">Você está prestes a excluir <strong id="delete-product-name"></strong>. O histórico de movimentações deste produto também será removido.</p>
+        <div class="modal-actions">
+            <button type="button" class="ghost" data-close="delete-modal">Cancelar</button>
+            <button class="danger" id="confirm-delete" type="button">Excluir produto e histórico</button>
+        </div>
+    </section>
+</div>
+
+<div class="modal-backdrop" id="history-modal">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="history-title">
+        <div class="modal-head">
+            <div>
+                <p class="eyebrow">Movimentações</p>
+                <h2 id="history-title">Histórico recente</h2>
+            </div>
+            <button type="button" class="close" data-close="history-modal" aria-label="Fechar">×</button>
+        </div>
+
+        <div class="history-list" id="history-list"></div>
+        <div class="modal-actions">
+            <button type="button" class="ghost" data-close="history-modal">Fechar</button>
+        </div>
+    </section>
+</div>

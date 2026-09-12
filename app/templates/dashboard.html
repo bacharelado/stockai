@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Painel simples para controlar produtos e estoque." />
+    <meta name="csrf-token" content="{{ csrf_token }}" />
+    <title>StockAI | Controle de estoque</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/dashboard.css" />
+</head>
+<body>
+    <div class="app">
+        <div class="mobile-overlay" id="mobile-overlay"></div>
+        {% include 'partials/sidebar.html' %}
+
+        <main class="content" id="inicio">
+            {% include 'partials/header.html' %}
+
+            <section class="stats" aria-label="Resumo do estoque">
+                <article class="stat">
+                    <div class="stat-head">
+                        <span>Produtos cadastrados</span>
+                        <span class="stat-icon">▦</span>
+                    </div>
+                    <div class="stat-number" id="total-products">{{ produtos|length }}</div>
+                    <div class="stat-note">itens na lista</div>
+                </article>
+
+                <article class="stat alert">
+                    <div class="stat-head">
+                        <span>Estoque baixo</span>
+                        <span class="stat-icon">!</span>
+                    </div>
+                    <div class="stat-number" id="low-products">0</div>
+                    <div class="stat-note">no mínimo ou abaixo dele</div>
+                </article>
+
+                <article class="stat">
+                    <div class="stat-head">
+                        <span>Unidades em estoque</span>
+                        <span class="stat-icon">↗</span>
+                    </div>
+                    <div class="stat-number" id="total-units">0</div>
+                    <div class="stat-note">quantidade disponível</div>
+                </article>
+
+                <article class="stat">
+                    <div class="stat-head">
+                        <span>Valor em estoque</span>
+                        <span class="stat-icon">R$</span>
+                    </div>
+                    <div class="stat-number" id="total-value">R$ 0,00</div>
+                    <div class="stat-note">preço cadastrado × quantidade</div>
+                </article>
+            </section>
+
+            <section class="overview">
+                <article class="panel">
+                    <div class="panel-head">
+                        <div>
+                            <h2>Situação do estoque</h2>
+                            <p>Produtos em dia ou no mínimo/abaixo dele</p>
+                        </div>
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="stock-chart" role="img" aria-label="Gráfico da situação do estoque"></canvas>
+                        <div class="chart-summary" aria-label="Resumo da situação do estoque">
+                            <div class="chart-summary-item">
+                                <span class="chart-dot ok"></span>
+                                <div><strong id="chart-ok">0</strong><span>produtos em dia</span></div>
+                            </div>
+                            <div class="chart-summary-item">
+                                <span class="chart-dot low"></span>
+                                <div><strong id="chart-low">0</strong><span>no mínimo ou abaixo</span></div>
+                            </div>
+                            <div class="chart-summary-note" id="chart-summary-note"></div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="panel" id="alertas">
+                    <div class="panel-head">
+                        <div>
+                            <h2>Precisa conferir</h2>
+                            <p>Itens no mínimo ou abaixo dele</p>
+                        </div>
+                    </div>
+                    <div class="attention-list" id="attention-list" aria-live="polite"></div>
+                </article>
+            </section>
+
+            <section class="panel inventory" id="produtos">
+                <div class="panel-head">
+                    <div>
+                        <h2>Produtos</h2>
+                        <p><span id="visible-count">{{ produtos|length }}</span> produtos encontrados</p>
+                    </div>
+
+                    <div class="inventory-tools">
+                        <button class="ghost" id="open-history" type="button">Ver histórico</button>
+                        <select class="filter" id="status-filter" aria-label="Filtrar situação">
+                            <option value="todos">Todas as situações</option>
+                            <option value="ok">Em dia</option>
+                            <option value="baixo">No mínimo ou abaixo</option>
+                        </select>
+                        <select class="filter" id="category-filter" aria-label="Filtrar categoria">
+                            <option value="todas">Todas as categorias</option>
+                        </select>
+                        <input class="search" id="product-search" type="search" placeholder="Buscar produto..." aria-label="Buscar produto" />
+                    </div>
+                </div>
+
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><button type="button" data-sort="nome">Produto ↕</button></th>
+                                <th>Categoria</th>
+                                <th><button type="button" data-sort="preco">Preço ↕</button></th>
+                                <th><button type="button" data-sort="estoque_atual">Atual ↕</button></th>
+                                <th>Mínimo</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-list"></tbody>
+                    </table>
+                </div>
+
+                <div class="empty" id="empty-state">Nenhum produto corresponde aos filtros atuais.</div>
+                <div class="pagination" id="pagination" aria-label="Paginação"></div>
+            </section>
+
+            {% if perfil == "admin" %}
+            <section class="panel admin-users" id="usuarios">
+                <div class="panel-head">
+                    <div>
+                        <h2>Usuários da empresa</h2>
+                        <p>Contas e níveis de acesso cadastrados</p>
+                    </div>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead><tr><th>Nome</th><th>Usuário</th><th>Perfil</th><th>Status</th></tr></thead>
+                        <tbody>
+                            {% for item in usuarios_admin %}
+                            <tr><td class="product-name">{{ item.nome }}</td><td>{{ item.username }}</td><td>{{ item.perfil|capitalize }}</td><td>{{ "Ativo" if item.ativo else "Inativo" }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            {% endif %}
+        </main>
+    </div>
+
+    {% include 'partials/modals.html' %}
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script id="initial-products" type="application/json">{{ produtos|tojson }}</script>
+    <script id="user-permissions" type="application/json">{{ {"canManage": pode_gerenciar}|tojson }}</script>
+    <script src="/static/dashboard.js?v=2" defer></script>
+</body>
+</html>

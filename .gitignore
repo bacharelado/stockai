@@ -1,0 +1,11 @@
+# Segredos e ambiente local
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Banco local
+*.db
+*.sqlite
+*.sqlite3

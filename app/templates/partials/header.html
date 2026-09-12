@@ -1,0 +1,16 @@
+<header class="topline">
+    <div>
+        <button class="mobile-menu" id="mobile-menu" type="button" aria-label="Abrir menu" aria-expanded="false">☰</button>
+        <p class="eyebrow">Resumo</p>
+        <h1>Seu estoque em tempo real.</h1>
+        <p class="subtitle">Acompanhe produtos, alertas e movimentações em um só lugar.</p>
+    </div>
+
+    <div class="top-actions">
+        <span class="date-chip" id="today"></span>
+        <button class="ghost" id="theme-toggle" type="button" aria-label="Ativar tema escuro">☾ Tema</button>
+        <a class="ghost" href="/produtos/exportar.csv">↓ Baixar lista</a>
+        {% if pode_gerenciar %}<button class="primary" id="open-create" type="button">+ Cadastrar produto</button>{% endif %}
+        <button class="ghost" id="logout" type="button">Sair</button>
+    </div>
+</header>

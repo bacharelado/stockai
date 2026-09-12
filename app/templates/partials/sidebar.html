@@ -1,0 +1,37 @@
+<aside class="sidebar" id="sidebar" aria-label="Navegação principal">
+    <div class="brand">
+        <img class="brand-logo" src="/static/stockai-logo.jpeg" alt="StockAI" />
+    </div>
+
+    <div class="sidebar-user">
+        <strong>{{ usuario }}</strong>
+        <span>{{ perfil|capitalize }} · {{ empresa }}</span>
+    </div>
+
+    <p class="nav-label">Operação</p>
+    <nav class="nav">
+        <a class="active" href="#inicio"><span class="nav-icon">◈</span><span>Resumo</span></a>
+        <a href="#produtos"><span class="nav-icon">▦</span><span>Produtos</span></a>
+        <a href="#alertas"><span class="nav-icon">!</span><span>Alertas</span></a>
+        <a href="#historico" id="history-link"><span class="nav-icon">↗</span><span>Histórico</span></a>
+    </nav>
+
+    {% if pode_gerenciar %}
+    <p class="nav-label nav-label-spaced">Gestão</p>
+    <nav class="nav">
+        <a href="#produtos"><span class="nav-icon">✎</span><span>Cadastros</span></a>
+    </nav>
+    {% endif %}
+
+    {% if perfil == "admin" %}
+    <p class="nav-label nav-label-spaced">Administração</p>
+    <nav class="nav">
+        <a href="#usuarios"><span class="nav-icon">♙</span><span>Usuários</span></a>
+    </nav>
+    {% endif %}
+
+    <div class="sidebar-footer">
+        Acesso protegido.<br />
+        Dados sempre atualizados.
+    </div>
+</aside>
