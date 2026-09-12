@@ -7,6 +7,9 @@
         const units = $("#total-units")?.textContent?.trim() || "0";
         const value = $("#total-value")?.textContent?.trim() || "R$ 0,00";
         const lowNames = [...document.querySelectorAll("#attention-list .attention-name")].map((item) => item.textContent.trim());
+        const dataElement = $("#initial-products");
+        let productData = [];
+        try { productData = dataElement ? JSON.parse(dataElement.textContent) : []; } catch (_) { productData = []; }
 
         const health = $("#insight-health");
         const healthNote = $("#insight-health-note");
@@ -14,7 +17,30 @@
         const priorityNote = $("#insight-priority-note");
         const valueTarget = $("#insight-value");
         const valueNote = $("#insight-value-note");
-        if (!health || !healthNote || !priority || !priorityNote || !valueTarget || !valueNote) return;
+        const replenishment = $("#insight-replenishment");
+        const replenishmentNote = $("#insight-replenishment-note");
+        if (!health || !healthNote || !priority || !priorityNote || !valueTarget || !valueNote || !replenishment || !replenishmentNote) return;
+
+        const suggestedUnits = productData.reduce((total, product) => {
+            const current = Number(product.estoque_atual) || 0;
+            const minimum = Number(product.estoque_minimo) || 0;
+            return total + Math.max(0, minimum - current);
+        }, 0);
+        const urgent = [...productData]
+            .filter((product) => Number(product.estoque_atual) <= Number(product.estoque_minimo))
+            .sort((a, b) => {
+                const deficitA = Math.max(0, Number(a.estoque_minimo) - Number(a.estoque_atual));
+                const deficitB = Math.max(0, Number(b.estoque_minimo) - Number(b.estoque_atual));
+                return deficitB - deficitA;
+            });
+
+        replenishment.textContent = `${suggestedUnits.toLocaleString("pt-BR")} ${suggestedUnits === 1 ? "unidade" : "unidades"}`;
+        if (!suggestedUnits) {
+            replenishmentNote.textContent = "Nenhuma reposição sugerida no momento.";
+        } else {
+            const main = urgent[0]?.nome || "itens em alerta";
+            replenishmentNote.textContent = `${main}${urgent.length > 1 ? ` e mais ${urgent.length - 1}` : ""}. Sugestão baseada no estoque mínimo.`;
+        }
 
         if (!products) {
             health.textContent = "Pronto para começar";
