@@ -19,7 +19,7 @@ class PlanosTestCase(unittest.TestCase):
     def test_limite_atingido(self):
         self.assertFalse(limite_atingido(49, 50))
         self.assertTrue(limite_atingido(50, 50))
-        self.assertTrue(limite_atingido(1000, None)) is False
+        self.assertFalse(limite_atingido(1000, None))
 
 
 if __name__ == "__main__":
