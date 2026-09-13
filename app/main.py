@@ -30,6 +30,7 @@ from app.config import (
     validate_settings,
 )
 from app.database import create_tables, get_db
+from app.security_headers import HSTS_VALUE
 from app.services import (
     buscar_produto_db,
     csv_seguro,
@@ -41,6 +42,7 @@ from app.services import (
     validar_nome_e_categoria,
     verificar_senha,
 )
+
 
 validate_settings()
 
@@ -103,6 +105,7 @@ app.add_middleware(
     same_site="lax",
     max_age=60 * 60 * 8,
 )
+
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -212,6 +215,8 @@ async def protecoes_http(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "same-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if IS_PRODUCTION:
+        response.headers["Strict-Transport-Security"] = HSTS_VALUE
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
