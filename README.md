@@ -1,8 +1,8 @@
 # StockAI 2.0.0
 
-StockAI é uma plataforma web de gestão de estoque pensada para pequenos negócios, lojas e operações que precisam de controle simples, seguro e acessível. A proposta é começar pelo estoque e evoluir para uma plataforma de operação e inteligência para pequenos negócios.
+StockAI é uma plataforma web de gestão de estoque pensada para pequenos negócios, lojas e operações que precisam de controle simples, seguro e acessível. A proposta é começar pelo estoque e evoluir para uma plataforma SaaS de operação e inteligência para pequenos negócios.
 
-Hoje, o StockAI já centraliza produtos, quantidades, movimentações, alertas, usuários e relatórios em um painel responsivo, com autenticação, permissões e isolamento de dados por empresa.
+Hoje, o StockAI já centraliza produtos, quantidades, movimentações, alertas, usuários e relatórios em um painel responsivo, com autenticação, permissões e isolamento de dados por empresa. A landing page apresenta o produto, seus recursos e a visão de planos.
 
 ## O que já existe
 
@@ -29,6 +29,35 @@ Hoje, o StockAI já centraliza produtos, quantidades, movimentações, alertas, 
 - Sessão de login e logout
 - Auditoria de ações importantes
 - Base preparada para administração da plataforma e planos
+
+### Planos
+
+O StockAI já possui uma estrutura centralizada para organizar os planos e preparar a evolução comercial da plataforma:
+
+| Plano | Produtos | Usuários | Situação |
+|---|---:|---:|---|
+| **Grátis** | Até 50 | Até 2 | Disponível |
+| **Pro** | Até 500 | Até 10 | Em breve |
+| **Empresa** | Ilimitados | Ilimitados | Em breve |
+
+O plano **Grátis** custa R$ 0/mês e é o ponto de entrada atual. Os preços dos planos pagos ainda não foram definidos e nenhuma cobrança é realizada nesta versão.
+
+A landing page apresenta os planos e direciona novos usuários para o cadastro gratuito. A aplicação já possui campos de plano e status de assinatura no banco de dados, além de regras centralizadas em `app/plans.py`.
+
+> Importante: os limites estão preparados como regra de produto, mas a cobrança e o bloqueio automático por limite ainda fazem parte da evolução comercial.
+
+### Landing page
+
+A página inicial funciona como apresentação comercial do StockAI e inclui:
+
+- Hero com chamada para ação
+- Apresentação dos principais recursos
+- Seção de planos
+- Explicação de como o produto funciona
+- Posicionamento "Do Amazonas para o seu negócio"
+- Links para cadastro e login
+- Canal direto de suporte por WhatsApp e e-mail
+- Layout responsivo
 
 ### Segurança
 
@@ -77,6 +106,8 @@ Essa visão representa o roadmap do produto. Nem todos esses módulos estão imp
 
 - Super Admin com visão global das empresas
 - Gestão de planos e limites por plano
+- Aplicação automática dos limites dos planos
+- Cobrança e assinaturas
 - Status e ativação de empresas
 - Métricas gerais da plataforma
 - Convites para funcionários
@@ -169,10 +200,11 @@ Use `--reload` somente durante desenvolvimento local. Em produção, use HTTPS e
 
 Abra no navegador:
 
-- http://localhost:8000/login
-- http://localhost:8000/dashboard
-- http://localhost:8000/signup
-- http://localhost:8000/static/relatorios.html
+- http://localhost:8000/ — landing page
+- http://localhost:8000/login — login
+- http://localhost:8000/dashboard — painel
+- http://localhost:8000/signup — cadastro de empresa
+- http://localhost:8000/static/relatorios.html — relatórios
 
 Em desenvolvimento, a documentação da API fica em `/docs`. Ela é desativada em produção.
 
@@ -211,6 +243,18 @@ A área de relatórios usa os dados reais do estoque e apresenta:
 - movimentações recentes
 - exportação do relatório em CSV
 
+## Testes
+
+As regras de planos já possuem testes automatizados com `unittest` em `tests/test_plans.py`.
+
+Para executar:
+
+```powershell
+python -m unittest discover -s tests -p "test_*.py"
+```
+
+A cobertura automatizada será ampliada conforme novos módulos comerciais e operacionais forem implementados.
+
 ## Deploy
 
 O StockAI pode rodar localmente com SQLite e em produção com PostgreSQL. No ambiente de produção, o processo de build deve executar as migrações do Alembic antes de iniciar o servidor.
@@ -237,6 +281,7 @@ app/
   database.py
   main.py
   models.py
+  plans.py
   schemas.py
   services.py
   static/
@@ -249,21 +294,28 @@ app/
   templates/
     partials/
     dashboard.html
+    landing.html
+    login.html
     signup.html
 migrations/
   versions/
+tests/
+  test_plans.py
 .env.example
 requirements.txt
 README.md
+PITCH.md
 ```
 
 ## Próximos marcos
 
 1. Consolidar a experiência SaaS com Super Admin, empresas e planos.
-2. Adicionar recuperação de senha, convites e notificações.
-3. Transformar o controle de estoque em operação completa com compras, vendas e filiais.
-4. Evoluir os indicadores para previsão e recomendações inteligentes.
-5. Adicionar testes automatizados e fortalecer observabilidade antes de escalar comercialmente.
+2. Aplicar limites de produtos e usuários conforme o plano contratado.
+3. Integrar cobrança e assinaturas dos planos Pro e Empresa.
+4. Adicionar recuperação de senha, convites e notificações.
+5. Transformar o controle de estoque em operação completa com compras, vendas e filiais.
+6. Evoluir os indicadores para previsão e recomendações inteligentes.
+7. Ampliar os testes automatizados e fortalecer observabilidade antes de escalar comercialmente.
 
 ## Contato e suporte
 
@@ -276,4 +328,4 @@ StockAI · Controle de estoque
 
 **StockAI 2.0.0 — base funcional de uma plataforma SaaS de gestão de estoque.**
 
-A versão atual já possui operação de estoque, multi-tenancy, autenticação, perfis, auditoria, relatórios e deploy em nuvem. O restante da visão de plataforma e inteligência está organizado como evolução do produto.
+A versão atual já possui operação de estoque, multi-tenancy, autenticação, perfis, auditoria, relatórios, landing comercial, estrutura inicial de planos e deploy em nuvem. A cobrança, a aplicação automática dos limites comerciais e o painel global de Super Admin ainda estão em evolução.
