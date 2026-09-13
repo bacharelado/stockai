@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import time
+from threading import Lock
+
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
@@ -21,6 +24,35 @@ class SignupResponse(BaseModel):
     username: str
 
 
+SIGNUP_RATE_WINDOW_SECONDS = 10 * 60
+SIGNUP_RATE_MAX_ATTEMPTS = 5
+_signup_attempts: dict[str, list[float]] = {}
+_signup_lock = Lock()
+
+
+def _registrar_tentativa_signup(chave: str) -> None:
+    """Reduz tentativas repetidas de cadastro para a mesma identidade solicitada."""
+    agora = time.monotonic()
+    with _signup_lock:
+        expiradas = [
+            item for item in _signup_attempts.get(chave, [])
+            if agora - item < SIGNUP_RATE_WINDOW_SECONDS
+        ]
+        if len(expiradas) >= SIGNUP_RATE_MAX_ATTEMPTS:
+            _signup_attempts[chave] = expiradas
+            raise HTTPException(
+                status_code=429,
+                detail="Muitas tentativas de cadastro. Tente novamente em alguns minutos.",
+            )
+        expiradas.append(agora)
+        _signup_attempts[chave] = expiradas
+
+
+def _limpar_tentativas_signup(chave: str) -> None:
+    with _signup_lock:
+        _signup_attempts.pop(chave, None)
+
+
 def criar_nova_empresa_com_admin(dados: SignupRequest, db: Session) -> SignupResponse:
     """Cria uma nova empresa e seu primeiro usuario admin, em uma unica transacao."""
     empresa_nome = dados.empresa_nome.strip()
@@ -33,6 +65,9 @@ def criar_nova_empresa_com_admin(dados: SignupRequest, db: Session) -> SignupRes
         raise HTTPException(status_code=422, detail="Nome do administrador e obrigatorio")
     if not admin_username:
         raise HTTPException(status_code=422, detail="Nome de usuario e obrigatorio")
+
+    chave_rate_limit = f"{empresa_nome.casefold()}::{admin_username}"
+    _registrar_tentativa_signup(chave_rate_limit)
 
     usuario_existente = db.query(models.Usuario).filter(models.Usuario.username == admin_username).first()
     if usuario_existente:
@@ -73,6 +108,7 @@ def criar_nova_empresa_com_admin(dados: SignupRequest, db: Session) -> SignupRes
         db.rollback()
         raise
 
+    _limpar_tentativas_signup(chave_rate_limit)
     db.refresh(empresa)
     db.refresh(usuario)
 
