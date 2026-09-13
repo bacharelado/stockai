@@ -1,14 +1,33 @@
 from __future__ import annotations
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app import models
-from app.main import get_current_user
+from app.database import get_db
+
+
+def _get_current_user_for_platform(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> models.Usuario:
+    user_id = request.session.get("user_id")
+    empresa_id = request.session.get("empresa_id")
+    if not user_id or not empresa_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    usuario = db.query(models.Usuario).filter(
+        models.Usuario.id == user_id,
+        models.Usuario.empresa_id == empresa_id,
+        models.Usuario.ativo.is_(True),
+    ).first()
+    if not usuario or not usuario.empresa.ativa:
+        request.session.clear()
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return usuario
 
 
 def require_platform_admin(
-    usuario: models.Usuario = Depends(get_current_user),
+    usuario: models.Usuario = Depends(_get_current_user_for_platform),
 ) -> models.Usuario:
     """Permite acesso apenas ao administrador da plataforma, não a admins de empresas."""
     if not usuario.plataforma_admin:
