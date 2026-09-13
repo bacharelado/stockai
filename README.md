@@ -329,3 +329,4 @@ StockAI · Controle de estoque
 **StockAI 2.0.0 — base funcional de uma plataforma SaaS de gestão de estoque.**
 
 A versão atual já possui operação de estoque, multi-tenancy, autenticação, perfis, auditoria, relatórios, landing comercial, estrutura inicial de planos e deploy em nuvem. A cobrança, a aplicação automática dos limites comerciais e o painel global de Super Admin ainda estão em evolução.
+teste 
