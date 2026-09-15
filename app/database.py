@@ -26,6 +26,7 @@ def _adicionar_colunas_legadas() -> None:
     colunas_por_tabela = {
         "produtos": {"empresa_id": "INTEGER", "codigo_barras": "VARCHAR(64)", "custo": "FLOAT"},
         "movimentacoes": {"empresa_id": "INTEGER", "usuario_id": "INTEGER", "observacao": "VARCHAR(500)"},
+        "usuarios": {"email": "VARCHAR(254)", "session_version": "INTEGER DEFAULT 1"},
     }
     with engine.begin() as connection:
         for tabela, colunas in colunas_por_tabela.items():
