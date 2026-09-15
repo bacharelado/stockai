@@ -14,6 +14,13 @@ from app.config import REDIS_URL
 
 _REDIS_CONNECT_TIMEOUT = 1.0
 _REDIS_SOCKET_TIMEOUT = 1.0
+_REDIS_LUA_RATE_LIMIT = """
+local current = redis.call('INCR', KEYS[1])
+if current == 1 then
+    redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return current
+"""
 _redis_client = None
 _redis_lock = Lock()
 
@@ -40,22 +47,22 @@ def redis_configured() -> bool:
 
 
 def shared_rate_limit(key: str, limit: int, window_seconds: int) -> bool | None:
-    """Registra uma tentativa de forma atomica em Redis.
+    """Registra uma tentativa atomica em Redis com janela fixa.
 
     Retorna True quando permitido, False quando excedido e None quando Redis
     nao esta configurado ou esta indisponivel. Nesse ultimo caso o chamador
     deve usar seu fallback local para manter a aplicacao funcional.
     """
+    if limit < 1 or window_seconds < 1:
+        raise ValueError("limit e window_seconds devem ser positivos")
+
     client = _get_redis()
     if client is None:
         return None
 
     redis_key = f"stockai:ratelimit:{key}"
     try:
-        with client.pipeline(transaction=True) as pipe:
-            pipe.incr(redis_key)
-            pipe.expire(redis_key, window_seconds)
-            count, _ = pipe.execute()
+        count = client.eval(_REDIS_LUA_RATE_LIMIT, 1, redis_key, window_seconds)
         return int(count) <= limit
     except Exception:
         # Falha no Redis nao deve derrubar autenticacao ou cadastro.
