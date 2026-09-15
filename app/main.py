@@ -31,6 +31,7 @@ from app.config import (
     validate_settings,
 )
 from app.database import create_tables, get_db
+from app.password_reset import router as password_reset_router
 from app.rate_limit import shared_rate_limit
 from app.security_headers import HSTS_VALUE
 from app.services import (
@@ -67,6 +68,7 @@ def bootstrap_conta_inicial() -> None:
                 username=ADMIN_USERNAME,
                 password_hash=gerar_hash_senha(ADMIN_PASSWORD),
                 perfil="admin",
+                session_version=1,
             )
             db.add(usuario)
             db.flush()
@@ -113,6 +115,7 @@ app.add_middleware(
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+app.include_router(password_reset_router)
 
 RATE_LIMIT_WINDOW_SECONDS = 60
 RATE_LIMIT_MAX_REQUESTS = 120
@@ -157,7 +160,12 @@ def _limitar_login(ip: str, username: str) -> bool:
 def login_page(request: Request):
     if request.session.get("authenticated"):
         return RedirectResponse(url="/dashboard", status_code=303)
-    return templates.TemplateResponse(request=request, name="login.html")
+    success = None
+    if request.query_params.get("reset") == "success":
+        success = "Senha redefinida com sucesso. Entre novamente com sua nova senha."
+    elif request.query_params.get("password_changed") == "success":
+        success = "Senha alterada com sucesso. Entre novamente."
+    return templates.TemplateResponse(request=request, name="login.html", context={"success": success})
 
 
 @app.post("/login", include_in_schema=False)
@@ -176,6 +184,9 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
         if valido:
             user_id = usuario.id
             empresa_id = usuario.empresa_id
+            session_version = usuario.session_version or 1
+            if usuario.session_version is None:
+                usuario.session_version = session_version
             registrar_auditoria(db, usuario.empresa_id, usuario.id, "login", "sessao", usuario.id)
             db.commit()
     finally:
@@ -186,6 +197,7 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
     request.session["authenticated"] = True
     request.session["user_id"] = user_id
     request.session["empresa_id"] = empresa_id
+    request.session["session_version"] = session_version
     request.session["csrf_token"] = secrets.token_urlsafe(32)
     return RedirectResponse(url="/dashboard", status_code=303)
 
@@ -273,9 +285,10 @@ def require_auth(request: Request):
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> models.Usuario:
     user_id = request.session.get("user_id")
     empresa_id = request.session.get("empresa_id")
+    session_version = request.session.get("session_version", 1)
     if not user_id or not empresa_id:
         raise HTTPException(status_code=401, detail="Authentication required")
-    usuario = db.query(models.Usuario).filter(models.Usuario.id == user_id, models.Usuario.empresa_id == empresa_id, models.Usuario.ativo.is_(True)).first()
+    usuario = db.query(models.Usuario).filter(models.Usuario.id == user_id, models.Usuario.empresa_id == empresa_id, models.Usuario.ativo.is_(True), models.Usuario.session_version == session_version).first()
     if not usuario or not usuario.empresa.ativa:
         request.session.clear()
         raise HTTPException(status_code=401, detail="Authentication required")
@@ -455,20 +468,23 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
 @app.get("/usuarios", dependencies=[Depends(require_auth)])
 def listar_usuarios(usuario: models.Usuario = Depends(require_admin), db: Session = Depends(get_db)):
     usuarios = db.query(models.Usuario).filter(models.Usuario.empresa_id == usuario.empresa_id).order_by(models.Usuario.nome).all()
-    return api_response([{"id": item.id, "nome": item.nome, "username": item.username, "perfil": item.perfil, "ativo": item.ativo} for item in usuarios])
+    return api_response([{"id": item.id, "nome": item.nome, "username": item.username, "email": item.email, "perfil": item.perfil, "ativo": item.ativo} for item in usuarios])
 
 
 @app.post("/usuarios", dependencies=[Depends(require_auth)])
 def criar_usuario(dados: schemas.UsuarioCreate, usuario: models.Usuario = Depends(require_admin), db: Session = Depends(get_db)):
     username = dados.username.strip().lower()
+    email = str(dados.email).strip().lower() if dados.email else None
     if db.query(models.Usuario).filter(models.Usuario.username == username).first():
         raise HTTPException(status_code=409, detail="Usuario ja existe")
-    novo = models.Usuario(empresa_id=usuario.empresa_id, nome=dados.nome.strip(), username=username, password_hash=gerar_hash_senha(dados.senha), perfil=dados.perfil)
+    if email and db.query(models.Usuario).filter(models.Usuario.email == email).first():
+        raise HTTPException(status_code=409, detail="E-mail ja esta em uso")
+    novo = models.Usuario(empresa_id=usuario.empresa_id, nome=dados.nome.strip(), username=username, email=email, password_hash=gerar_hash_senha(dados.senha), perfil=dados.perfil, session_version=1)
     db.add(novo)
     db.flush()
     registrar_auditoria(db, usuario.empresa_id, usuario.id, "criar", "usuario", novo.id, {"username": novo.username, "perfil": novo.perfil})
     db.commit()
-    return api_response({"id": novo.id, "nome": novo.nome, "username": novo.username, "perfil": novo.perfil, "ativo": novo.ativo}, 201)
+    return api_response({"id": novo.id, "nome": novo.nome, "username": novo.username, "email": novo.email, "perfil": novo.perfil, "ativo": novo.ativo}, 201)
 
 
 @app.get("/filiais", dependencies=[Depends(require_auth)])
