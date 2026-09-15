@@ -27,4 +27,4 @@ jobs:
           STOCKAI_ADMIN_PASSWORD: test-password-for-ci-only
           STOCKAI_SESSION_SECRET: test-session-secret-for-ci-only
           STOCKAI_AUTO_CREATE_SCHEMA: "true"
-        run: pytest -q
+        run: python -m pytest -q
