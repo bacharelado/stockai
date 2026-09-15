@@ -2,61 +2,60 @@
 
 <p align="center">
   <strong>Inventory management SaaS for small businesses</strong><br>
-  Built with Python/FastAPI, SQLAlchemy and PostgreSQL, with a lightweight web frontend.
+  Practical inventory control today, data-driven decisions tomorrow.
 </p>
 
 <p align="center">
   <a href="https://stockai-6yw7.onrender.com">Live Demo</a> ·
   <a href="https://github.com/bacharelado/stockai/pulls">Pull Requests</a> ·
-  <a href="https://github.com/bacharelado/stockai/blob/main/docs/PORTFOLIO.md">Engineering Case Study</a>
+  <a href="https://github.com/bacharelado/stockai/blob/portfolio-showcase-2026/docs/PORTFOLIO.md">Engineering Case Study</a> ·
+  <a href="https://github.com/bacharelado/stockai/tree/portfolio-showcase-2026/docs">Documentation</a>
 </p>
 
 <p align="center">
-  <img src="https://github.com/bacharelado/stockai/actions/workflows/tests.yml/badge.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10+">
+  <img src="https://github.com/bacharelado/stockai/actions/workflows/tests.yml/badge.svg?branch=main" alt="Tests">
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/FastAPI-application-009688" alt="FastAPI">
   <img src="https://img.shields.io/badge/PostgreSQL-production-4169E1" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/License-see%20repository-lightgrey" alt="License">
+  <img src="https://img.shields.io/badge/Deployment-Render-46E3B7" alt="Render">
 </p>
 
 ---
 
-## Why StockAI
+## Overview
 
-StockAI starts with a practical problem: helping small businesses keep inventory under control without turning the software into an operational burden.
+StockAI is a web-based inventory platform designed for small businesses that need a simple way to manage products, stock movements and operational visibility without depending on scattered spreadsheets.
 
-The current product covers products, quantities, stock movements, alerts, reports, users and company-level data isolation. The project is also an engineering case study: changes are investigated, isolated in Git branches, covered by regression tests and delivered through pull requests.
+The project combines a real product with an engineering case study: problems are investigated from observed behavior, isolated in focused Git branches, corrected with regression tests and delivered through GitHub pull requests.
 
-## Product capabilities
+## What the product does
 
-| Area | What is available |
+| Area | Current capabilities |
 |---|---|
-| **Inventory** | Product management, entries, exits, low-stock alerts and movement history |
-| **Dashboard** | Stock indicators, search, filters, sorting and responsive views |
-| **Reports** | Real inventory data, category values, recent movements and CSV export |
-| **Companies** | Multi-tenant architecture with company-level data isolation |
-| **Access** | Authentication, sessions and `operador` / `gerente` / `admin` roles |
+| **Inventory** | Products, entries, exits, stock levels, low-stock alerts and movement history |
+| **Dashboard** | Indicators, search, filters, sorting, pagination and responsive views |
+| **Reports** | Inventory metrics, category values, recent movements and CSV export |
+| **Companies** | Multi-tenant data isolation by company |
+| **Access control** | Sessions with `operador`, `gerente` and `admin` roles |
 | **Security** | CSRF protection, password hashing, backend authorization, validation and security headers |
-| **Operations** | Branches and suppliers with company-scoped data |
-| **Commercial foundation** | Centralized plan rules and subscription status fields |
+| **Operations** | Company-scoped branches and suppliers |
+| **Commercial foundation** | Centralized plan rules and subscription-status fields |
 
 ## Engineering highlights
 
-### Real production debugging
+### Production bug fixed through a focused pull request
 
-A product-edit regression was found where an update could silently reset the product cost or erase its barcode because those fields were not consistently present in the edit payload.
+A product-edit regression could cause the product cost or barcode to be lost when an unrelated field was changed.
 
-The fix was handled as a focused pull request:
+The fix tightened the update contract, exposed the missing fields in the forms and added regression coverage.
 
-- [PR #4 — preserve product cost and barcode on edit](https://github.com/bacharelado/stockai/pull/4)
+→ [PR #4 — preserve product cost and barcode on edit](https://github.com/bacharelado/stockai/pull/4)
 
-The correction tightened the update contract, exposed the missing fields in the UI and added regression tests. It was merged into `main` and deployed through the normal production flow.
+### Security work kept isolated
 
-### Security work
+Security hardening was handled as a separate workstream so unrelated production changes remained focused and reviewable.
 
-Security hardening is kept separate from unrelated product fixes so changes stay reviewable:
-
-- [PR #3 — harden authentication and preserve inventory history](https://github.com/bacharelado/stockai/pull/3)
+→ [PR #3 — harden authentication and preserve inventory history](https://github.com/bacharelado/stockai/pull/3)
 
 ## Technology stack
 
@@ -68,7 +67,7 @@ Security hardening is kept separate from unrelated product fixes so changes stay
 | Migrations | Alembic |
 | Frontend | HTML, CSS, JavaScript, Jinja2 |
 | Testing | Python `unittest` and regression tests |
-| Version control | Git, GitHub |
+| Version control | Git + GitHub |
 | Deployment | Render |
 
 ## Architecture
@@ -94,17 +93,17 @@ SQLAlchemy
 PostgreSQL
 ```
 
-The important boundary is the backend: UI visibility is not treated as authorization. Company and role checks are enforced server-side.
+The backend is the authorization boundary: UI visibility is not treated as permission. Company and role checks are enforced server-side.
 
-More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+→ [Architecture documentation](docs/ARCHITECTURE.md)
 
 ## AI-assisted software engineering
 
-AI is used as an engineering accelerator, not as a substitute for validation.
+AI is used as an engineering accelerator rather than as a substitute for validation.
 
-The development workflow includes repository exploration, debugging, root-cause analysis, test design, focused implementation, Git branching, pull requests, diff review and live validation after deployment.
+The workflow includes repository exploration, debugging, root-cause analysis, test design, focused implementation, Git branching, pull requests, diff review and live validation.
 
-The goal is to produce software that can be explained, tested and maintained—not simply generated.
+The goal is software that can be understood, tested and maintained—not simply generated.
 
 ## Engineering workflow
 
@@ -137,8 +136,8 @@ stockai/
 ├── app/             # application code
 ├── migrations/      # Alembic migrations
 ├── tests/            # automated tests
-├── docs/             # engineering and product documentation
-│   └── product/      # pitches and product positioning
+├── docs/             # product, engineering and support documentation
+│   └── product/      # pitches and positioning
 ├── .github/          # CI and security configuration
 ├── .env.example      # local environment template
 ├── alembic.ini
@@ -146,18 +145,19 @@ stockai/
 └── README.md
 ```
 
-The repository root is intentionally kept small. Product, engineering and support documentation live under `docs/` so the project is easier to navigate for contributors, recruiters and visitors.
+The root is intentionally small. Detailed product and engineering material lives under `docs/` so visitors, contributors and recruiters can find the main project entry point quickly.
 
 ## Documentation
 
-- [Engineering case study](docs/PORTFOLIO.md)
 - [Documentation index](docs/README.md)
-- [Architecture overview](docs/ARCHITECTURE.md)
-- [Security notes](docs/SECURITY.md)
+- [Engineering case study](docs/PORTFOLIO.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Security](docs/SECURITY.md)
 - [Operations and validation](docs/OPERATIONS.md)
-- [Product roadmap](docs/ROADMAP.md)
+- [Roadmap](docs/ROADMAP.md)
 - [Engineering decisions](docs/DECISIONS.md)
 - [Contributing](docs/CONTRIBUTING.md)
+- [Support](docs/SUPPORT.md)
 - [Product pitch](docs/product/PITCH.md)
 - [Elevator pitch](docs/product/ELEVATOR_PITCH.md)
 
@@ -191,7 +191,12 @@ The repository root is intentionally kept small. Product, engineering and suppor
 
 ## Local development
 
-Requirements: Python 3.10+
+### Requirements
+
+- Python 3.10+
+- pip
+
+### Setup
 
 ```bash
 python -m venv .venv
@@ -202,11 +207,22 @@ python -m alembic upgrade head
 python -m uvicorn app.main:app --reload
 ```
 
-For Windows PowerShell, use the corresponding `.venv\\Scripts\\Activate.ps1` activation command.
+For Windows PowerShell:
 
-### Production database
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item .env.example .env
+python -m alembic upgrade head
+python -m uvicorn app.main:app --reload
+```
 
-Production is configured for PostgreSQL with Psycopg 3. Keep credentials in environment variables and never commit secrets.
+### Environment
+
+Keep credentials in environment variables and never commit secrets.
+
+For production PostgreSQL:
 
 ```text
 STOCKAI_DATABASE_URL=postgresql+psycopg://user:password@host:5432/stockai
@@ -217,19 +233,21 @@ STOCKAI_AUTO_CREATE_SCHEMA=false
 
 Every push and pull request targeting `main` runs the automated test suite through GitHub Actions.
 
-Run the same suite locally with:
+Run locally with:
 
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
 ```
 
-Regression-focused checks are part of the development workflow and are expanded as new failure modes are discovered.
+Regression-focused checks are expanded as new failure modes are discovered.
 
 ## Project status
 
 **StockAI 2.0.0 — functional foundation for a multi-tenant inventory SaaS.**
 
-The current version includes inventory operations, authentication, roles, company isolation, security controls, reports, branches, suppliers, plan foundations and cloud deployment. Billing, automated commercial limits, Super Admin and the intelligence modules remain roadmap work.
+The current version includes inventory operations, authentication, roles, company isolation, security controls, reports, branches, suppliers, plan foundations and cloud deployment.
+
+Billing, automatic commercial limits, Super Admin and advanced intelligence modules remain roadmap work.
 
 ## Live application
 
