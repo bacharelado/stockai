@@ -31,7 +31,7 @@ _signup_lock = Lock()
 
 
 def _registrar_tentativa_signup(chave: str) -> None:
-    """Reduz tentativas repetidas de cadastro para a mesma identidade solicitada."""
+    """Reduz tentativas repetidas de cadastro por identidade solicitada."""
     agora = time.monotonic()
     with _signup_lock:
         expiradas = [
@@ -46,6 +46,13 @@ def _registrar_tentativa_signup(chave: str) -> None:
             )
         expiradas.append(agora)
         _signup_attempts[chave] = expiradas
+        if len(_signup_attempts) > 10000:
+            expiradas_chaves = [
+                key for key, values in _signup_attempts.items()
+                if not values or agora - values[-1] >= SIGNUP_RATE_WINDOW_SECONDS
+            ]
+            for key in expiradas_chaves[:5000]:
+                _signup_attempts.pop(key, None)
 
 
 def _limpar_tentativas_signup(chave: str) -> None:
@@ -53,7 +60,7 @@ def _limpar_tentativas_signup(chave: str) -> None:
         _signup_attempts.pop(chave, None)
 
 
-def criar_nova_empresa_com_admin(dados: SignupRequest, db: Session) -> SignupResponse:
+def criar_nova_empresa_com_admin(dados: SignupRequest, db: Session, rate_limit_identity: str | None = None) -> SignupResponse:
     """Cria uma nova empresa e seu primeiro usuario admin, em uma unica transacao."""
     empresa_nome = dados.empresa_nome.strip()
     admin_nome = dados.admin_nome.strip()
@@ -66,7 +73,8 @@ def criar_nova_empresa_com_admin(dados: SignupRequest, db: Session) -> SignupRes
     if not admin_username:
         raise HTTPException(status_code=422, detail="Nome de usuario e obrigatorio")
 
-    chave_rate_limit = f"{empresa_nome.casefold()}::{admin_username}"
+    identidade = (rate_limit_identity or "global").strip().lower()
+    chave_rate_limit = f"{identidade}::{admin_username}"
     _registrar_tentativa_signup(chave_rate_limit)
 
     usuario_existente = db.query(models.Usuario).filter(models.Usuario.username == admin_username).first()
@@ -77,7 +85,7 @@ def criar_nova_empresa_com_admin(dados: SignupRequest, db: Session) -> SignupRes
     db.add(empresa)
 
     try:
-        db.flush()  # garante empresa.id sem fechar a transacao
+        db.flush()
 
         usuario = models.Usuario(
             empresa_id=empresa.id,
