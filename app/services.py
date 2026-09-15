@@ -12,11 +12,18 @@ from app import models, schemas
 
 
 PERFIS_VALIDOS = {"admin", "gerente", "operador"}
+SCRYPT_N = 2**14
+SCRYPT_R = 8
+SCRYPT_P = 1
+
+# Used when a username does not exist. It must be a fixed valid hash so the
+# nonexistent-user path performs the same expensive KDF as a real user.
+DUMMY_PASSWORD_HASH = "scrypt$Xypti5weSnPR8LbC6KSXMQ==$l6L/RtSxgSmuSytu+uKHyDTF7ouEhry85IlQkMjZaGjgpIpU2Ccyb97Adt58oIL6N2ounDYGMWo6/ZfBT2NVqw=="
 
 
 def gerar_hash_senha(senha: str) -> str:
     sal = secrets.token_bytes(16)
-    chave = hashlib.scrypt(senha.encode("utf-8"), salt=sal, n=2**14, r=8, p=1)
+    chave = hashlib.scrypt(senha.encode("utf-8"), salt=sal, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P)
     return "scrypt$" + base64.b64encode(sal).decode("ascii") + "$" + base64.b64encode(chave).decode("ascii")
 
 
@@ -27,7 +34,7 @@ def verificar_senha(senha: str, password_hash: str) -> bool:
             return False
         sal = base64.b64decode(sal_b64.encode("ascii"), validate=True)
         esperada = base64.b64decode(chave_b64.encode("ascii"), validate=True)
-        atual = hashlib.scrypt(senha.encode("utf-8"), salt=sal, n=2**14, r=8, p=1)
+        atual = hashlib.scrypt(senha.encode("utf-8"), salt=sal, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P)
         return secrets.compare_digest(atual, esperada)
     except (ValueError, TypeError):
         return False
@@ -71,21 +78,74 @@ def validar_nome_e_categoria(nome: str | None, categoria: str | None = None):
     return nome_limpo, categoria_limpa
 
 
-def listar_produtos_db(db: Session, empresa_id: int):
-    return db.query(models.Produto).filter(models.Produto.empresa_id == empresa_id).order_by(models.Produto.nome).all()
+def _produtos_base_query(db: Session, empresa_id: int):
+    return db.query(models.Produto).filter(
+        models.Produto.empresa_id == empresa_id,
+        models.Produto.ativo.is_(True),
+    )
 
 
-def buscar_produto_db(db: Session, empresa_id: int, produto_id: int):
-    return db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.empresa_id == empresa_id).first()
+def listar_produtos_db(db: Session, empresa_id: int, limit: int | None = None, offset: int = 0):
+    query = _produtos_base_query(db, empresa_id).order_by(models.Produto.nome)
+    if limit is not None:
+        query = query.limit(limit).offset(offset)
+    return query.all()
 
 
-def listar_movimentacoes_db(db: Session, empresa_id: int):
+def contar_produtos_db(db: Session, empresa_id: int) -> int:
+    return _produtos_base_query(db, empresa_id).count()
+
+
+def listar_produtos_paginado_db(
+    db: Session,
+    empresa_id: int,
+    *,
+    page: int,
+    page_size: int,
+    busca: str | None = None,
+    status: str = "todos",
+    categoria: str | None = None,
+    ordenar_por: str = "nome",
+    ordem: str = "asc",
+):
+    query = _produtos_base_query(db, empresa_id)
+    if busca:
+        termo = f"%{busca.strip()}%"
+        query = query.filter(
+            models.Produto.nome.ilike(termo) |
+            models.Produto.categoria.ilike(termo)
+        )
+    if categoria:
+        query = query.filter(models.Produto.categoria == categoria)
+    if status == "baixo":
+        query = query.filter(models.Produto.estoque_atual <= models.Produto.estoque_minimo)
+    elif status == "ok":
+        query = query.filter(models.Produto.estoque_atual > models.Produto.estoque_minimo)
+
+    campos = {
+        "nome": models.Produto.nome,
+        "preco": models.Produto.preco,
+        "estoque_atual": models.Produto.estoque_atual,
+    }
+    coluna = campos.get(ordenar_por, models.Produto.nome)
+    query = query.order_by(coluna.desc() if ordem == "desc" else coluna.asc(), models.Produto.id.asc())
+
+    total = query.count()
+    produtos = query.offset((page - 1) * page_size).limit(page_size).all()
+    return produtos, total
+
+
+def listar_movimentacoes_db(db: Session, empresa_id: int, limit: int = 100, offset: int = 0):
     return (
         db.query(models.Movimentacao)
         .join(models.Produto)
-        .filter(models.Movimentacao.empresa_id == empresa_id)
+        .filter(
+            models.Movimentacao.empresa_id == empresa_id,
+            models.Produto.empresa_id == empresa_id,
+        )
         .order_by(models.Movimentacao.data.desc())
-        .limit(100)
+        .limit(limit)
+        .offset(offset)
         .all()
     )
 

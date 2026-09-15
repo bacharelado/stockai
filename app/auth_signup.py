@@ -4,17 +4,19 @@ import time
 from threading import Lock
 
 from fastapi import HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import models, services
+from app.rate_limit import clear_shared_rate_limit, shared_rate_limit
 
 
 class SignupRequest(BaseModel):
     empresa_nome: str = Field(..., min_length=2, max_length=120)
     admin_nome: str = Field(..., min_length=2, max_length=120)
     admin_username: str = Field(..., min_length=3, max_length=80)
+    admin_email: EmailStr
     admin_senha: str = Field(..., min_length=12, max_length=255)
 
 
@@ -31,7 +33,20 @@ _signup_lock = Lock()
 
 
 def _registrar_tentativa_signup(chave: str) -> None:
-    """Reduz tentativas repetidas de cadastro para a mesma identidade solicitada."""
+    """Reduz tentativas repetidas de cadastro, preferindo Redis compartilhado."""
+    shared_result = shared_rate_limit(
+        f"signup:{chave}",
+        SIGNUP_RATE_MAX_ATTEMPTS,
+        SIGNUP_RATE_WINDOW_SECONDS,
+    )
+    if shared_result is False:
+        raise HTTPException(
+            status_code=429,
+            detail="Muitas tentativas de cadastro. Tente novamente em alguns minutos.",
+        )
+    if shared_result is not None:
+        return
+
     agora = time.monotonic()
     with _signup_lock:
         expiradas = [
@@ -46,18 +61,27 @@ def _registrar_tentativa_signup(chave: str) -> None:
             )
         expiradas.append(agora)
         _signup_attempts[chave] = expiradas
+        if len(_signup_attempts) > 10000:
+            expiradas_chaves = [
+                key for key, values in _signup_attempts.items()
+                if not values or agora - values[-1] >= SIGNUP_RATE_WINDOW_SECONDS
+            ]
+            for key in expiradas_chaves[:5000]:
+                _signup_attempts.pop(key, None)
 
 
 def _limpar_tentativas_signup(chave: str) -> None:
+    clear_shared_rate_limit(f"signup:{chave}")
     with _signup_lock:
         _signup_attempts.pop(chave, None)
 
 
-def criar_nova_empresa_com_admin(dados: SignupRequest, db: Session) -> SignupResponse:
+def criar_nova_empresa_com_admin(dados: SignupRequest, db: Session, rate_limit_identity: str | None = None) -> SignupResponse:
     """Cria uma nova empresa e seu primeiro usuario admin, em uma unica transacao."""
     empresa_nome = dados.empresa_nome.strip()
     admin_nome = dados.admin_nome.strip()
     admin_username = dados.admin_username.strip().lower()
+    admin_email = str(dados.admin_email).strip().lower()
 
     if not empresa_nome:
         raise HTTPException(status_code=422, detail="Nome da empresa e obrigatorio")
@@ -66,26 +90,32 @@ def criar_nova_empresa_com_admin(dados: SignupRequest, db: Session) -> SignupRes
     if not admin_username:
         raise HTTPException(status_code=422, detail="Nome de usuario e obrigatorio")
 
-    chave_rate_limit = f"{empresa_nome.casefold()}::{admin_username}"
+    identidade = (rate_limit_identity or "global").strip().lower()
+    chave_rate_limit = f"{identidade}::{admin_username}"
     _registrar_tentativa_signup(chave_rate_limit)
 
     usuario_existente = db.query(models.Usuario).filter(models.Usuario.username == admin_username).first()
     if usuario_existente:
         raise HTTPException(status_code=409, detail="Nome de usuario ja esta em uso")
+    email_existente = db.query(models.Usuario).filter(models.Usuario.email == admin_email).first()
+    if email_existente:
+        raise HTTPException(status_code=409, detail="E-mail ja esta em uso")
 
     empresa = models.Empresa(nome=empresa_nome, ativa=True)
     db.add(empresa)
 
     try:
-        db.flush()  # garante empresa.id sem fechar a transacao
+        db.flush()
 
         usuario = models.Usuario(
             empresa_id=empresa.id,
             nome=admin_nome,
             username=admin_username,
+            email=admin_email,
             password_hash=services.gerar_hash_senha(dados.admin_senha),
             perfil="admin",
             ativo=True,
+            session_version=1,
         )
         db.add(usuario)
         db.flush()

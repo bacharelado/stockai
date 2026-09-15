@@ -9,11 +9,12 @@ Hoje, o StockAI já centraliza produtos, quantidades, movimentações, alertas, 
 ### Estoque
 
 - Dashboard responsivo para desktop e celular
-- Cadastro, edição e exclusão de produtos
+- Cadastro, edição e exclusão lógica de produtos
 - Entrada e saída de estoque com histórico
 - Alerta quando a quantidade chega ao mínimo definido
 - Sugestões de reposição no painel
-- Filtros, busca, ordenação e paginação
+- Filtros, busca e ordenação
+- Paginação server-side na API de produtos, com filtros e ordenação controlados pelo backend
 - Tema claro e escuro
 - Exportação de produtos em CSV
 - Relatórios de estoque com dados reais
@@ -66,14 +67,41 @@ A página inicial funciona como apresentação comercial do StockAI e inclui:
 - Autenticação baseada em sessão
 - Proteção CSRF nas operações que alteram dados
 - Senhas armazenadas com hash
+- Verificação de senha também para usuários inexistentes, reduzindo diferença de tempo no login
+- Rate limiting de login por IP e username
+- Rate limiting HTTP compartilhado via Redis quando configurado, com fallback local quando Redis está indisponível
+- Rate limiting do cadastro público compartilhado via Redis quando configurado
 - Validação de dados com Pydantic e regras adicionais no servidor
 - Escapamento de dados renderizados
 - Proteção contra fórmulas maliciosas em CSV
 - Limite de 1 MB por requisição
 - Cabeçalhos de segurança
+- CSP com nonce para scripts inline necessários
 - Controle de sessão com duração limitada
 - Isolamento de dados por empresa
 - Saída de estoque protegida contra saldo insuficiente
+
+## API de produtos
+
+A rota autenticada `GET /produtos` usa paginação server-side. O banco executa o `COUNT`, filtros, ordenação e `LIMIT/OFFSET`; a aplicação não precisa carregar todos os produtos para montar uma página.
+
+Parâmetros disponíveis:
+
+- `page`: página iniciando em 1
+- `page_size`: 1–100, padrão 20
+- `busca`: busca por nome ou categoria
+- `status`: `todos`, `ok` ou `baixo`
+- `categoria`: filtro exato por categoria
+- `ordenar_por`: `nome`, `preco` ou `estoque_atual`
+- `ordem`: `asc` ou `desc`
+
+Exemplo:
+
+```text
+GET /produtos?page=2&page_size=20&busca=cafe&status=baixo&ordenar_por=estoque_atual&ordem=asc
+```
+
+A resposta contém `items` e os metadados `page`, `page_size`, `total` e `total_pages`. O resultado continua restrito à empresa do usuário autenticado e exclui produtos arquivados.
 
 ## Visão da plataforma
 
@@ -147,6 +175,7 @@ Essa visão representa o roadmap do produto. Nem todos esses módulos estão imp
 - Alembic
 - SQLite para uso local
 - PostgreSQL para produção
+- Redis opcional para rate limiting compartilhado em múltiplas instâncias
 - Jinja2
 - JavaScript, HTML e CSS puros
 
@@ -154,6 +183,7 @@ Essa visão representa o roadmap do produto. Nem todos esses módulos estão imp
 
 - Python 3.10 ou superior
 - pip
+- Redis recomendado para ambientes com múltiplas instâncias
 
 ## Instalação
 
@@ -169,6 +199,15 @@ Edite o arquivo `.env` e defina valores fortes e exclusivos para:
 - `STOCKAI_ADMIN_USERNAME`
 - `STOCKAI_ADMIN_PASSWORD`
 - `STOCKAI_SESSION_SECRET`
+- `STOCKAI_REDIS_URL` (opcional; recomendado quando houver múltiplas instâncias)
+
+Exemplo:
+
+```text
+STOCKAI_REDIS_URL=redis://localhost:6379/0
+```
+
+Sem `STOCKAI_REDIS_URL`, o StockAI continua funcionando com os limitadores locais por processo. Para produção com mais de uma instância da aplicação, configure o mesmo Redis compartilhado em todas elas.
 
 O primeiro início cria a empresa principal e migra os produtos e movimentações existentes para ela. O administrador informado no `.env` é convertido em um usuário persistido com senha armazenada em hash.
 
@@ -215,7 +254,7 @@ Em desenvolvimento, a documentação da API fica em `/docs`. Ela é desativada e
 - Entradas e saídas aceitam somente quantidades inteiras maiores que zero.
 - Uma saída é bloqueada quando supera o saldo disponível.
 - O alerta é aplicado quando o estoque está igual ou abaixo do mínimo.
-- Ao excluir um produto, as movimentações vinculadas a ele também são removidas após confirmação.
+- Ao excluir um produto, ele é arquivado logicamente (`ativo=false`) e as movimentações históricas permanecem preservadas.
 
 ## Perfis e menus
 
@@ -246,7 +285,7 @@ A área de relatórios usa os dados reais do estoque e apresenta:
 
 ## Testes
 
-Já existem testes automatizados com `unittest` em `tests/`: regras de planos (`test_plans.py`), cabeçalhos de segurança (`test_security_headers.py`) e segurança do cadastro de empresas (`test_signup_security.py`).
+Já existem testes automatizados com `unittest` em `tests/`: regras de planos (`test_plans.py`), cabeçalhos de segurança (`test_security_headers.py`), segurança do cadastro de empresas (`test_signup_security.py`), rate limiting compartilhado (`test_rate_limit.py`) e hardening/paginação de produtos (`test_security_hardening.py`).
 
 Para executar:
 
@@ -283,8 +322,10 @@ app/
   main.py
   models.py
   plans.py
+  rate_limit.py
   schemas.py
   services.py
+  security_headers.py
   static/
     dashboard.css
     dashboard.js
@@ -303,10 +344,12 @@ app/
     landing.html
     login.html
     signup.html
-migrations/
+alembic/
   versions/
 tests/
   test_plans.py
+  test_rate_limit.py
+  test_security_hardening.py
   test_security_headers.py
   test_signup_security.py
 .env.example

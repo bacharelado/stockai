@@ -16,9 +16,18 @@ SESSION_SECRET = os.getenv("STOCKAI_SESSION_SECRET")
 INITIAL_COMPANY_NAME = os.getenv("STOCKAI_INITIAL_COMPANY_NAME", "Empresa principal")
 AUTO_CREATE_SCHEMA = os.getenv("STOCKAI_AUTO_CREATE_SCHEMA", "true").lower() == "true"
 DATABASE_URL = os.getenv("STOCKAI_DATABASE_URL", "sqlite:///./stockai.db")
+REDIS_URL = os.getenv("STOCKAI_REDIS_URL")
 ALLOWED_HOSTS = [host.strip() for host in os.getenv(
     "STOCKAI_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver"
 ).split(",") if host.strip()]
+
+SMTP_HOST = os.getenv("STOCKAI_SMTP_HOST")
+SMTP_PORT = int(os.getenv("STOCKAI_SMTP_PORT", "587"))
+SMTP_USER = os.getenv("STOCKAI_SMTP_USER")
+SMTP_PASSWORD = os.getenv("STOCKAI_SMTP_PASSWORD")
+SMTP_FROM = os.getenv("STOCKAI_SMTP_FROM")
+SMTP_USE_TLS = os.getenv("STOCKAI_SMTP_USE_TLS", "true").lower() == "true"
+PUBLIC_BASE_URL = os.getenv("STOCKAI_PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
 
 
 def validate_settings() -> None:
