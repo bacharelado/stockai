@@ -31,6 +31,7 @@ from app.config import (
     validate_settings,
 )
 from app.database import create_tables, get_db
+from app.rate_limit import shared_rate_limit
 from app.security_headers import HSTS_VALUE
 from app.services import (
     DUMMY_PASSWORD_HASH,
@@ -128,8 +129,23 @@ def api_response(payload, status_code=200):
 
 
 def _limitar_login(ip: str, username: str) -> bool:
-    agora = time.monotonic()
     chave_usuario = username.strip().lower()
+    redis_ip = shared_rate_limit(
+        f"login:ip:{ip}",
+        AUTH_RATE_LIMIT_MAX_IP_ATTEMPTS,
+        AUTH_RATE_LIMIT_WINDOW_SECONDS,
+    )
+    redis_username = shared_rate_limit(
+        f"login:username:{chave_usuario}",
+        AUTH_RATE_LIMIT_MAX_USERNAME_ATTEMPTS,
+        AUTH_RATE_LIMIT_WINDOW_SECONDS,
+    )
+    if redis_ip is False or redis_username is False:
+        return False
+    if redis_ip is True and redis_username is True:
+        return True
+
+    agora = time.monotonic()
     with _rate_limit_lock:
         ip_attempts = [item for item in _auth_ip_attempts.get(ip, []) if agora - item < AUTH_RATE_LIMIT_WINDOW_SECONDS]
         username_attempts = [item for item in _auth_username_attempts.get(chave_usuario, []) if agora - item < AUTH_RATE_LIMIT_WINDOW_SECONDS]
@@ -202,8 +218,9 @@ def pagina_signup(request: Request):
 
 
 @app.post("/api/signup", include_in_schema=False)
-def signup(dados: SignupRequest, db: Session = Depends(get_db)):
-    resultado = criar_nova_empresa_com_admin(dados, db)
+def signup(request: Request, dados: SignupRequest, db: Session = Depends(get_db)):
+    client_ip = request.client.host if request.client else "unknown"
+    resultado = criar_nova_empresa_com_admin(dados, db, rate_limit_identity=client_ip)
     return api_response(resultado.model_dump(), 201)
 
 
@@ -231,17 +248,21 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.middleware("http")
 async def protecoes_http(request: Request, call_next):
     client = request.client.host if request.client else "unknown"
-    now = time.monotonic()
-    with _rate_limit_lock:
-        requests = [item for item in _rate_limits.get(client, []) if now - item < RATE_LIMIT_WINDOW_SECONDS]
-        if len(requests) >= RATE_LIMIT_MAX_REQUESTS:
-            return JSONResponse(status_code=429, content={"detail": "Muitas requisicoes. Tente novamente em instantes."})
-        requests.append(now)
-        _rate_limits[client] = requests
-        if len(_rate_limits) > 10000:
-            expirados = [key for key, values in _rate_limits.items() if not values or now - values[-1] >= RATE_LIMIT_WINDOW_SECONDS]
-            for key in expirados[:5000]:
-                _rate_limits.pop(key, None)
+    shared_result = shared_rate_limit(f"http:{client}", RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS)
+    if shared_result is False:
+        return JSONResponse(status_code=429, content={"detail": "Muitas requisicoes. Tente novamente em instantes."})
+    if shared_result is None:
+        now = time.monotonic()
+        with _rate_limit_lock:
+            requests = [item for item in _rate_limits.get(client, []) if now - item < RATE_LIMIT_WINDOW_SECONDS]
+            if len(requests) >= RATE_LIMIT_MAX_REQUESTS:
+                return JSONResponse(status_code=429, content={"detail": "Muitas requisicoes. Tente novamente em instantes."})
+            requests.append(now)
+            _rate_limits[client] = requests
+            if len(_rate_limits) > 10000:
+                expirados = [key for key, values in _rate_limits.items() if not values or now - values[-1] >= RATE_LIMIT_WINDOW_SECONDS]
+                for key in expirados[:5000]:
+                    _rate_limits.pop(key, None)
 
     content_length = request.headers.get("content-length")
     if content_length:
