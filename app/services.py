@@ -44,22 +44,26 @@ def registrar_auditoria(db: Session, empresa_id: int, usuario_id: int | None, ac
     ))
 
 
-def produto_to_out(p: models.Produto) -> dict:
+def produto_to_out(p: models.Produto, incluir_campos_sensiveis: bool = True) -> dict:
     status = "baixo" if p.estoque_atual <= p.estoque_minimo else "ok"
     preco = p.preco or 0
     custo = p.custo or 0
-    return {
+    resposta = {
         "id": p.id,
         "nome": (p.nome or "").strip(),
         "categoria": (p.categoria or "").strip() if p.categoria else None,
-        "codigo_barras": p.codigo_barras,
         "preco": preco,
-        "custo": custo,
-        "margem": round(((preco - custo) / preco) * 100, 2) if preco else 0,
         "estoque_atual": p.estoque_atual,
         "estoque_minimo": p.estoque_minimo,
         "status": status,
     }
+    if incluir_campos_sensiveis:
+        resposta.update({
+            "codigo_barras": p.codigo_barras,
+            "custo": custo,
+            "margem": round(((preco - custo) / preco) * 100, 2) if preco else 0,
+        })
+    return resposta
 
 
 def validar_nome_e_categoria(nome: str | None, categoria: str | None = None):
