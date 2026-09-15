@@ -12,11 +12,18 @@ from app import models, schemas
 
 
 PERFIS_VALIDOS = {"admin", "gerente", "operador"}
+SCRYPT_N = 2**14
+SCRYPT_R = 8
+SCRYPT_P = 1
+
+# Used when a username does not exist. It must be a fixed valid hash so the
+# nonexistent-user path performs the same expensive KDF as a real user.
+DUMMY_PASSWORD_HASH = "scrypt$Xypti5weSnPR8LbC6KSXMQ==$l6L/RtSxgSmuSytu+uKHyDTF7ouEhry85IlQkMjZaGjgpIpU2Ccyb97Adt58oIL6N2ounDYGMWo6/ZfBT2NVqw=="
 
 
 def gerar_hash_senha(senha: str) -> str:
     sal = secrets.token_bytes(16)
-    chave = hashlib.scrypt(senha.encode("utf-8"), salt=sal, n=2**14, r=8, p=1)
+    chave = hashlib.scrypt(senha.encode("utf-8"), salt=sal, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P)
     return "scrypt$" + base64.b64encode(sal).decode("ascii") + "$" + base64.b64encode(chave).decode("ascii")
 
 
@@ -27,7 +34,7 @@ def verificar_senha(senha: str, password_hash: str) -> bool:
             return False
         sal = base64.b64decode(sal_b64.encode("ascii"), validate=True)
         esperada = base64.b64decode(chave_b64.encode("ascii"), validate=True)
-        atual = hashlib.scrypt(senha.encode("utf-8"), salt=sal, n=2**14, r=8, p=1)
+        atual = hashlib.scrypt(senha.encode("utf-8"), salt=sal, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P)
         return secrets.compare_digest(atual, esperada)
     except (ValueError, TypeError):
         return False
@@ -71,21 +78,42 @@ def validar_nome_e_categoria(nome: str | None, categoria: str | None = None):
     return nome_limpo, categoria_limpa
 
 
-def listar_produtos_db(db: Session, empresa_id: int):
-    return db.query(models.Produto).filter(models.Produto.empresa_id == empresa_id).order_by(models.Produto.nome).all()
+def listar_produtos_db(db: Session, empresa_id: int, limit: int | None = None, offset: int = 0):
+    query = db.query(models.Produto).filter(
+        models.Produto.empresa_id == empresa_id,
+        models.Produto.ativo.is_(True),
+    ).order_by(models.Produto.nome)
+    if limit is not None:
+        query = query.limit(limit).offset(offset)
+    return query.all()
+
+
+def contar_produtos_db(db: Session, empresa_id: int) -> int:
+    return db.query(models.Produto).filter(
+        models.Produto.empresa_id == empresa_id,
+        models.Produto.ativo.is_(True),
+    ).count()
 
 
 def buscar_produto_db(db: Session, empresa_id: int, produto_id: int):
-    return db.query(models.Produto).filter(models.Produto.id == produto_id, models.Produto.empresa_id == empresa_id).first()
+    return db.query(models.Produto).filter(
+        models.Produto.id == produto_id,
+        models.Produto.empresa_id == empresa_id,
+        models.Produto.ativo.is_(True),
+    ).first()
 
 
-def listar_movimentacoes_db(db: Session, empresa_id: int):
+def listar_movimentacoes_db(db: Session, empresa_id: int, limit: int = 100, offset: int = 0):
     return (
         db.query(models.Movimentacao)
         .join(models.Produto)
-        .filter(models.Movimentacao.empresa_id == empresa_id)
+        .filter(
+            models.Movimentacao.empresa_id == empresa_id,
+            models.Produto.empresa_id == empresa_id,
+        )
         .order_by(models.Movimentacao.data.desc())
-        .limit(100)
+        .limit(limit)
+        .offset(offset)
         .all()
     )
 
