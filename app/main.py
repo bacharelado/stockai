@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from sqlalchemy import update
+from sqlalchemy import case, func, update
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -131,21 +131,12 @@ def api_response(payload, status_code=200):
 
 def _limitar_login(ip: str, username: str) -> bool:
     chave_usuario = username.strip().lower()
-    redis_ip = shared_rate_limit(
-        f"login:ip:{ip}",
-        AUTH_RATE_LIMIT_MAX_IP_ATTEMPTS,
-        AUTH_RATE_LIMIT_WINDOW_SECONDS,
-    )
-    redis_username = shared_rate_limit(
-        f"login:username:{chave_usuario}",
-        AUTH_RATE_LIMIT_MAX_USERNAME_ATTEMPTS,
-        AUTH_RATE_LIMIT_WINDOW_SECONDS,
-    )
+    redis_ip = shared_rate_limit(f"login:ip:{ip}", AUTH_RATE_LIMIT_MAX_IP_ATTEMPTS, AUTH_RATE_LIMIT_WINDOW_SECONDS)
+    redis_username = shared_rate_limit(f"login:username:{chave_usuario}", AUTH_RATE_LIMIT_MAX_USERNAME_ATTEMPTS, AUTH_RATE_LIMIT_WINDOW_SECONDS)
     if redis_ip is False or redis_username is False:
         return False
     if redis_ip is True and redis_username is True:
         return True
-
     agora = time.monotonic()
     with _rate_limit_lock:
         ip_attempts = [item for item in _auth_ip_attempts.get(ip, []) if agora - item < AUTH_RATE_LIMIT_WINDOW_SECONDS]
@@ -174,10 +165,7 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
     client_ip = request.client.host if request.client else "unknown"
     username_normalized = username.strip().lower()
     if not _limitar_login(client_ip, username_normalized):
-        return templates.TemplateResponse(
-            request=request, name="login.html", context={"error": "Muitas tentativas. Tente novamente em alguns minutos."}, status_code=429
-        )
-
+        return templates.TemplateResponse(request=request, name="login.html", context={"error": "Muitas tentativas. Tente novamente em alguns minutos."}, status_code=429)
     db = next(get_db())
     valido = False
     try:
@@ -193,9 +181,7 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
     finally:
         db.close()
     if not valido:
-        return templates.TemplateResponse(
-            request=request, name="login.html", context={"error": "Credenciais invalidas."}, status_code=401
-        )
+        return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenciais invalidas."}, status_code=401)
     request.session.clear()
     request.session["authenticated"] = True
     request.session["user_id"] = user_id
@@ -232,18 +218,8 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    erros_seguros = [
-        {
-            "loc": list(erro.get("loc", [])),
-            "msg": erro.get("msg", "Dados invalidos"),
-            "type": erro.get("type", "value_error"),
-        }
-        for erro in exc.errors()
-    ]
-    return JSONResponse(
-        status_code=422,
-        content={"success": False, "data": {"detail": "Dados invalidos", "errors": erros_seguros}},
-    )
+    erros_seguros = [{"loc": list(erro.get("loc", [])), "msg": erro.get("msg", "Dados invalidos"), "type": erro.get("type", "value_error")} for erro in exc.errors()]
+    return JSONResponse(status_code=422, content={"success": False, "data": {"detail": "Dados invalidos", "errors": erros_seguros}})
 
 
 @app.middleware("http")
@@ -264,7 +240,6 @@ async def protecoes_http(request: Request, call_next):
                 expirados = [key for key, values in _rate_limits.items() if not values or now - values[-1] >= RATE_LIMIT_WINDOW_SECONDS]
                 for key in expirados[:5000]:
                     _rate_limits.pop(key, None)
-
     content_length = request.headers.get("content-length")
     if content_length:
         try:
@@ -272,7 +247,6 @@ async def protecoes_http(request: Request, call_next):
                 return JSONResponse(status_code=413, content={"detail": "Requisicao muito grande"})
         except ValueError:
             return JSONResponse(status_code=400, content={"detail": "Cabecalho invalido"})
-
     request.state.csp_nonce = secrets.token_urlsafe(16)
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -281,13 +255,7 @@ async def protecoes_http(request: Request, call_next):
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     if IS_PRODUCTION:
         response.headers["Strict-Transport-Security"] = HSTS_VALUE
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; "
-        "script-src 'self' 'nonce-" + request.state.csp_nonce + "' https://cdn.jsdelivr.net; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-        "font-src 'self' https://fonts.gstatic.com; "
-        "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'"
-    )
+    response.headers["Content-Security-Policy"] = ("default-src 'self'; " "script-src 'self' 'nonce-" + request.state.csp_nonce + "' https://cdn.jsdelivr.net; " "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " "font-src 'self' https://fonts.gstatic.com; " "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'")
     return response
 
 
@@ -307,11 +275,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> models.
     empresa_id = request.session.get("empresa_id")
     if not user_id or not empresa_id:
         raise HTTPException(status_code=401, detail="Authentication required")
-    usuario = db.query(models.Usuario).filter(
-        models.Usuario.id == user_id,
-        models.Usuario.empresa_id == empresa_id,
-        models.Usuario.ativo.is_(True),
-    ).first()
+    usuario = db.query(models.Usuario).filter(models.Usuario.id == user_id, models.Usuario.empresa_id == empresa_id, models.Usuario.ativo.is_(True)).first()
     if not usuario or not usuario.empresa.ativa:
         request.session.clear()
         raise HTTPException(status_code=401, detail="Authentication required")
@@ -353,17 +317,7 @@ def criar_produto(produto: schemas.ProdutoCreate, usuario: models.Usuario = Depe
     codigo_barras = (produto.codigo_barras or "").strip() or None
     if codigo_barras and db.query(models.Produto).filter(models.Produto.empresa_id == usuario.empresa_id, models.Produto.codigo_barras == codigo_barras, models.Produto.ativo.is_(True)).first():
         raise HTTPException(status_code=409, detail="Codigo de barras ja cadastrado")
-
-    novo = models.Produto(
-        empresa_id=usuario.empresa_id,
-        nome=nome_limpo,
-        categoria=categoria_limpa,
-        preco=produto.preco,
-        custo=produto.custo,
-        codigo_barras=codigo_barras,
-        estoque_atual=produto.estoque_atual,
-        estoque_minimo=produto.estoque_minimo,
-    )
+    novo = models.Produto(empresa_id=usuario.empresa_id, nome=nome_limpo, categoria=categoria_limpa, preco=produto.preco, custo=produto.custo, codigo_barras=codigo_barras, estoque_atual=produto.estoque_atual, estoque_minimo=produto.estoque_minimo)
     db.add(novo)
     db.flush()
     registrar_auditoria(db, usuario.empresa_id, usuario.id, "criar", "produto", novo.id, {"nome": novo.nome})
@@ -384,14 +338,8 @@ def atualizar_produto(produto_id: int, dados: schemas.ProdutoUpdate, usuario: mo
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     codigo_barras = (dados.codigo_barras or "").strip() or None
-    if codigo_barras and db.query(models.Produto).filter(
-        models.Produto.empresa_id == usuario.empresa_id,
-        models.Produto.codigo_barras == codigo_barras,
-        models.Produto.id != produto_id,
-        models.Produto.ativo.is_(True),
-    ).first():
+    if codigo_barras and db.query(models.Produto).filter(models.Produto.empresa_id == usuario.empresa_id, models.Produto.codigo_barras == codigo_barras, models.Produto.id != produto_id, models.Produto.ativo.is_(True)).first():
         raise HTTPException(status_code=409, detail="Codigo de barras ja cadastrado")
-
     produto.nome = nome_limpo
     produto.categoria = categoria_limpa
     produto.preco = dados.preco
@@ -416,38 +364,27 @@ def excluir_produto(produto_id: int, usuario: models.Usuario = Depends(require_m
 
 
 @app.get("/produtos", dependencies=[Depends(require_auth)])
-def listar_produtos(
-    usuario: models.Usuario = Depends(get_current_user),
-    db: Session = Depends(get_db),
-    page: int = Query(1, ge=1, le=1_000_000),
-    page_size: int = Query(20, ge=1, le=100),
-    busca: str | None = Query(None, max_length=120),
-    status: str = Query("todos", pattern="^(todos|ok|baixo)$"),
-    categoria: str | None = Query(None, max_length=80),
-    ordenar_por: str = Query("nome", pattern="^(nome|preco|estoque_atual)$"),
-    ordem: str = Query("asc", pattern="^(asc|desc)$"),
-):
-    produtos, total = listar_produtos_paginado_db(
-        db,
-        usuario.empresa_id,
-        page=page,
-        page_size=page_size,
-        busca=busca,
-        status=status,
-        categoria=categoria,
-        ordenar_por=ordenar_por,
-        ordem=ordem,
-    )
+def listar_produtos(usuario: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db), page: int = Query(1, ge=1, le=1_000_000), page_size: int = Query(20, ge=1, le=100), busca: str | None = Query(None, max_length=120), status: str = Query("todos", pattern="^(todos|ok|baixo)$"), categoria: str | None = Query(None, max_length=80), ordenar_por: str = Query("nome", pattern="^(nome|preco|estoque_atual)$"), ordem: str = Query("asc", pattern="^(asc|desc)$")):
+    produtos, total = listar_produtos_paginado_db(db, usuario.empresa_id, page=page, page_size=page_size, busca=busca, status=status, categoria=categoria, ordenar_por=ordenar_por, ordem=ordem)
     total_pages = max(1, math.ceil(total / page_size))
-    return api_response({
-        "items": [produto_to_out(p) for p in produtos],
-        "pagination": {
-            "page": page,
-            "page_size": page_size,
-            "total": total,
-            "total_pages": total_pages,
-        },
-    })
+    base = db.query(models.Produto).filter(models.Produto.empresa_id == usuario.empresa_id, models.Produto.ativo.is_(True))
+    estoque_baixo = models.Produto.estoque_atual <= models.Produto.estoque_minimo
+    aggregate = base.with_entities(func.count(models.Produto.id), func.coalesce(func.sum(case((estoque_baixo, 1), else_=0)), 0), func.coalesce(func.sum(models.Produto.estoque_atual), 0), func.coalesce(func.sum(models.Produto.estoque_atual * models.Produto.preco), 0), func.coalesce(func.sum(case((estoque_baixo, models.Produto.estoque_minimo - models.Produto.estoque_atual), else_=0)), 0)).one()
+    low_items = base.filter(estoque_baixo).order_by((models.Produto.estoque_minimo - models.Produto.estoque_atual).desc(), models.Produto.nome.asc(), models.Produto.id.asc()).limit(8).all()
+    categories = [categoria for (categoria,) in base.with_entities(models.Produto.categoria).filter(models.Produto.categoria.isnot(None), models.Produto.categoria != "").distinct().order_by(models.Produto.categoria.asc()).all()]
+    total_products = int(aggregate[0] or 0)
+    low_products = int(aggregate[1] or 0)
+    summary = {
+        "total_products": total_products,
+        "low_products": low_products,
+        "normal_products": total_products - low_products,
+        "total_units": int(aggregate[2] or 0),
+        "total_value": float(aggregate[3] or 0),
+        "replenishment_units": int(aggregate[4] or 0),
+        "low_items": [produto_to_out(p) for p in low_items],
+        "categories": categories,
+    }
+    return api_response({"items": [produto_to_out(p) for p in produtos], "pagination": {"page": page, "page_size": page_size, "total": total, "total_pages": total_pages}, "summary": summary})
 
 
 @app.post("/produtos/{produto_id}/entrada", dependencies=[Depends(require_auth)])
@@ -457,11 +394,7 @@ def registrar_entrada(produto_id: int, mov: schemas.MovimentacaoCreate, usuario:
         raise HTTPException(status_code=404, detail="Produto nao encontrado")
     if mov.quantidade <= 0:
         raise HTTPException(status_code=400, detail="Quantidade deve ser maior que zero")
-    db.execute(
-        update(models.Produto)
-        .where(models.Produto.id == produto_id, models.Produto.empresa_id == usuario.empresa_id, models.Produto.ativo.is_(True))
-        .values(estoque_atual=models.Produto.estoque_atual + mov.quantidade)
-    )
+    db.execute(update(models.Produto).where(models.Produto.id == produto_id, models.Produto.empresa_id == usuario.empresa_id, models.Produto.ativo.is_(True)).values(estoque_atual=models.Produto.estoque_atual + mov.quantidade))
     db.add(models.Movimentacao(empresa_id=usuario.empresa_id, produto_id=produto_id, usuario_id=usuario.id, tipo="entrada", quantidade=mov.quantidade, observacao=mov.observacao))
     registrar_auditoria(db, usuario.empresa_id, usuario.id, "entrada", "produto", produto_id, {"quantidade": mov.quantidade})
     db.commit()
@@ -476,11 +409,7 @@ def registrar_saida(produto_id: int, mov: schemas.MovimentacaoCreate, usuario: m
         raise HTTPException(status_code=404, detail="Produto nao encontrado")
     if mov.quantidade <= 0:
         raise HTTPException(status_code=400, detail="Quantidade deve ser maior que zero")
-    result = db.execute(
-        update(models.Produto)
-        .where(models.Produto.id == produto_id, models.Produto.empresa_id == usuario.empresa_id, models.Produto.ativo.is_(True), models.Produto.estoque_atual >= mov.quantidade)
-        .values(estoque_atual=models.Produto.estoque_atual - mov.quantidade)
-    )
+    result = db.execute(update(models.Produto).where(models.Produto.id == produto_id, models.Produto.empresa_id == usuario.empresa_id, models.Produto.ativo.is_(True), models.Produto.estoque_atual >= mov.quantidade).values(estoque_atual=models.Produto.estoque_atual - mov.quantidade))
     if result.rowcount != 1:
         db.rollback()
         raise HTTPException(status_code=400, detail="Estoque insuficiente")
@@ -494,17 +423,7 @@ def registrar_saida(produto_id: int, mov: schemas.MovimentacaoCreate, usuario: m
 @app.get("/movimentacoes", dependencies=[Depends(require_auth)])
 def listar_movimentacoes(usuario: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     movimentacoes = listar_movimentacoes_db(db, usuario.empresa_id)
-    return api_response([
-        {
-            "id": mov.id,
-            "produto_id": mov.produto_id,
-            "produto": mov.produto.nome,
-            "tipo": mov.tipo,
-            "quantidade": mov.quantidade,
-            "data": mov.data.isoformat(),
-        }
-        for mov in movimentacoes
-    ])
+    return api_response([{"id": mov.id, "produto_id": mov.produto_id, "produto": mov.produto.nome, "tipo": mov.tipo, "quantidade": mov.quantidade, "data": mov.data.isoformat()} for mov in movimentacoes])
 
 
 @app.get("/produtos/exportar.csv", dependencies=[Depends(require_auth)])
@@ -514,17 +433,9 @@ def exportar_produtos(usuario: models.Usuario = Depends(get_current_user), db: S
     escritor.writerow(["ID", "Produto", "Categoria", "Preco", "Estoque atual", "Estoque minimo", "Status"])
     for produto in listar_produtos_db(db, usuario.empresa_id):
         dados = produto_to_out(produto)
-        escritor.writerow([
-            dados["id"], csv_seguro(dados["nome"]), csv_seguro(dados["categoria"]),
-            f'{dados["preco"]:.2f}', dados["estoque_atual"],
-            dados["estoque_minimo"], dados["status"],
-        ])
+        escritor.writerow([dados["id"], csv_seguro(dados["nome"]), csv_seguro(dados["categoria"]), f'{dados["preco"]:.2f}', dados["estoque_atual"], dados["estoque_minimo"], dados["status"]])
     arquivo.seek(0)
-    return StreamingResponse(
-        iter([arquivo.getvalue()]),
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": "attachment; filename=stockai-produtos.csv"},
-    )
+    return StreamingResponse(iter([arquivo.getvalue()]), media_type="text/csv; charset=utf-8", headers={"Content-Disposition": "attachment; filename=stockai-produtos.csv"})
 
 
 @app.get("/dashboard")
@@ -535,27 +446,10 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         usuario = get_current_user(request, db)
     except HTTPException:
         return RedirectResponse(url="/login", status_code=303)
-    produtos = listar_produtos_db(db, usuario.empresa_id)
-    dados = [produto_to_out(p) for p in produtos]
     usuarios_admin = []
     if usuario.perfil == "admin":
-        usuarios_admin = db.query(models.Usuario).filter(
-            models.Usuario.empresa_id == usuario.empresa_id
-        ).order_by(models.Usuario.nome).all()
-    return templates.TemplateResponse(
-        request=request,
-        name="dashboard.html",
-        context={
-            "produtos": dados,
-            "csrf_token": request.session.get("csrf_token", ""),
-            "empresa": usuario.empresa.nome,
-            "usuario": usuario.nome,
-            "perfil": usuario.perfil,
-            "pode_gerenciar": usuario.perfil in {"admin", "gerente"},
-            "usuarios_admin": usuarios_admin,
-            "csp_nonce": request.state.csp_nonce,
-        },
-    )
+        usuarios_admin = db.query(models.Usuario).filter(models.Usuario.empresa_id == usuario.empresa_id).order_by(models.Usuario.nome).all()
+    return templates.TemplateResponse(request=request, name="dashboard.html", context={"produtos": [], "csrf_token": request.session.get("csrf_token", ""), "empresa": usuario.empresa.nome, "usuario": usuario.nome, "perfil": usuario.perfil, "pode_gerenciar": usuario.perfil in {"admin", "gerente"}, "usuarios_admin": usuarios_admin, "csp_nonce": request.state.csp_nonce})
 
 
 @app.get("/usuarios", dependencies=[Depends(require_auth)])
@@ -569,13 +463,7 @@ def criar_usuario(dados: schemas.UsuarioCreate, usuario: models.Usuario = Depend
     username = dados.username.strip().lower()
     if db.query(models.Usuario).filter(models.Usuario.username == username).first():
         raise HTTPException(status_code=409, detail="Usuario ja existe")
-    novo = models.Usuario(
-        empresa_id=usuario.empresa_id,
-        nome=dados.nome.strip(),
-        username=username,
-        password_hash=gerar_hash_senha(dados.senha),
-        perfil=dados.perfil,
-    )
+    novo = models.Usuario(empresa_id=usuario.empresa_id, nome=dados.nome.strip(), username=username, password_hash=gerar_hash_senha(dados.senha), perfil=dados.perfil)
     db.add(novo)
     db.flush()
     registrar_auditoria(db, usuario.empresa_id, usuario.id, "criar", "usuario", novo.id, {"username": novo.username, "perfil": novo.perfil})
@@ -613,13 +501,7 @@ def criar_fornecedor(dados: schemas.FornecedorCreate, usuario: models.Usuario = 
     documento = (dados.documento or "").strip() or None
     if documento and db.query(models.Fornecedor).filter(models.Fornecedor.empresa_id == usuario.empresa_id, models.Fornecedor.documento == documento).first():
         raise HTTPException(status_code=409, detail="Fornecedor com este documento ja existe")
-    fornecedor = models.Fornecedor(
-        empresa_id=usuario.empresa_id,
-        nome=dados.nome.strip(),
-        documento=documento,
-        email=(dados.email or "").strip() or None,
-        telefone=(dados.telefone or "").strip() or None,
-    )
+    fornecedor = models.Fornecedor(empresa_id=usuario.empresa_id, nome=dados.nome.strip(), documento=documento, email=(dados.email or "").strip() or None, telefone=(dados.telefone or "").strip() or None)
     db.add(fornecedor)
     db.flush()
     registrar_auditoria(db, usuario.empresa_id, usuario.id, "criar", "fornecedor", fornecedor.id, {"nome": fornecedor.nome})
