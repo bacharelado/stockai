@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import models, services
+from app.rate_limit import clear_shared_rate_limit, shared_rate_limit
 
 
 class SignupRequest(BaseModel):
@@ -31,7 +32,20 @@ _signup_lock = Lock()
 
 
 def _registrar_tentativa_signup(chave: str) -> None:
-    """Reduz tentativas repetidas de cadastro por identidade solicitada."""
+    """Reduz tentativas repetidas de cadastro, preferindo Redis compartilhado."""
+    shared_result = shared_rate_limit(
+        f"signup:{chave}",
+        SIGNUP_RATE_MAX_ATTEMPTS,
+        SIGNUP_RATE_WINDOW_SECONDS,
+    )
+    if shared_result is False:
+        raise HTTPException(
+            status_code=429,
+            detail="Muitas tentativas de cadastro. Tente novamente em alguns minutos.",
+        )
+    if shared_result is not None:
+        return
+
     agora = time.monotonic()
     with _signup_lock:
         expiradas = [
@@ -56,6 +70,7 @@ def _registrar_tentativa_signup(chave: str) -> None:
 
 
 def _limpar_tentativas_signup(chave: str) -> None:
+    clear_shared_rate_limit(f"signup:{chave}")
     with _signup_lock:
         _signup_attempts.pop(chave, None)
 
