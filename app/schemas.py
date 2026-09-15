@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class ProdutoCreate(BaseModel):
@@ -46,6 +46,7 @@ class MovimentacaoCreate(BaseModel):
 class UsuarioCreate(BaseModel):
     nome: str = Field(..., min_length=2, max_length=120)
     username: str = Field(..., min_length=3, max_length=80, pattern=r"^[a-zA-Z0-9._-]+$")
+    email: Optional[EmailStr] = None
     senha: str = Field(..., min_length=12, max_length=256)
     perfil: str = Field("operador", pattern=r"^(admin|gerente|operador)$")
 
@@ -54,6 +55,7 @@ class UsuarioOut(BaseModel):
     id: int
     nome: str
     username: str
+    email: Optional[EmailStr]
     perfil: str
     ativo: bool
 
