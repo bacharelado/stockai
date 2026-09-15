@@ -305,7 +305,7 @@ def criar_produto(produto: schemas.ProdutoCreate, usuario: models.Usuario = Depe
     registrar_auditoria(db, usuario.empresa_id, usuario.id, "criar", "produto", novo.id, {"nome": novo.nome})
     db.commit()
     db.refresh(novo)
-    return api_response(produto_to_out(novo))
+    return api_response(produto_to_out(novo, incluir_campos_sensiveis=True))
 
 
 @app.put("/produtos/{produto_id}", dependencies=[Depends(require_auth)])
@@ -336,7 +336,7 @@ def atualizar_produto(produto_id: int, dados: schemas.ProdutoUpdate, usuario: mo
     registrar_auditoria(db, usuario.empresa_id, usuario.id, "atualizar", "produto", produto.id, {"nome": produto.nome})
     db.commit()
     db.refresh(produto)
-    return api_response(produto_to_out(produto))
+    return api_response(produto_to_out(produto, incluir_campos_sensiveis=True))
 
 
 @app.delete("/produtos/{produto_id}", dependencies=[Depends(require_auth)])
@@ -354,7 +354,8 @@ def excluir_produto(produto_id: int, usuario: models.Usuario = Depends(require_m
 @app.get("/produtos", dependencies=[Depends(require_auth)])
 def listar_produtos(usuario: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     produtos = listar_produtos_db(db, usuario.empresa_id)
-    return api_response([produto_to_out(p) for p in produtos])
+    incluir_campos_sensiveis = usuario.perfil in {"admin", "gerente"}
+    return api_response([produto_to_out(p, incluir_campos_sensiveis=incluir_campos_sensiveis) for p in produtos])
 
 
 @app.post("/produtos/{produto_id}/entrada", dependencies=[Depends(require_auth)])
@@ -373,7 +374,7 @@ def registrar_entrada(produto_id: int, mov: schemas.MovimentacaoCreate, usuario:
     registrar_auditoria(db, usuario.empresa_id, usuario.id, "entrada", "produto", produto_id, {"quantidade": mov.quantidade})
     db.commit()
     produto = buscar_produto_db(db, usuario.empresa_id, produto_id)
-    return api_response(produto_to_out(produto))
+    return api_response(produto_to_out(produto, incluir_campos_sensiveis=usuario.perfil in {"admin", "gerente"}))
 
 
 @app.post("/produtos/{produto_id}/saida", dependencies=[Depends(require_auth)])
@@ -395,7 +396,7 @@ def registrar_saida(produto_id: int, mov: schemas.MovimentacaoCreate, usuario: m
     registrar_auditoria(db, usuario.empresa_id, usuario.id, "saida", "produto", produto_id, {"quantidade": mov.quantidade})
     db.commit()
     produto = buscar_produto_db(db, usuario.empresa_id, produto_id)
-    return api_response(produto_to_out(produto))
+    return api_response(produto_to_out(produto, incluir_campos_sensiveis=usuario.perfil in {"admin", "gerente"}))
 
 
 @app.get("/movimentacoes", dependencies=[Depends(require_auth)])
@@ -420,7 +421,7 @@ def exportar_produtos(usuario: models.Usuario = Depends(get_current_user), db: S
     escritor = csv.writer(arquivo)
     escritor.writerow(["ID", "Produto", "Categoria", "Preco", "Estoque atual", "Estoque minimo", "Status"])
     for produto in listar_produtos_db(db, usuario.empresa_id):
-        dados = produto_to_out(produto)
+        dados = produto_to_out(produto, incluir_campos_sensiveis=False)
         escritor.writerow([
             dados["id"], csv_seguro(dados["nome"]), csv_seguro(dados["categoria"]),
             f'{dados["preco"]:.2f}', dados["estoque_atual"],
@@ -443,7 +444,8 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     except HTTPException:
         return RedirectResponse(url="/login", status_code=303)
     produtos = listar_produtos_db(db, usuario.empresa_id)
-    dados = [produto_to_out(p) for p in produtos]
+    incluir_campos_sensiveis = usuario.perfil in {"admin", "gerente"}
+    dados = [produto_to_out(p, incluir_campos_sensiveis=incluir_campos_sensiveis) for p in produtos]
     usuarios_admin = []
     if usuario.perfil == "admin":
         usuarios_admin = db.query(models.Usuario).filter(
@@ -509,7 +511,7 @@ def criar_filial(dados: schemas.FilialCreate, usuario: models.Usuario = Depends(
 
 
 @app.get("/fornecedores", dependencies=[Depends(require_auth)])
-def listar_fornecedores(usuario: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+def listar_fornecedores(usuario: models.Usuario = Depends(require_management), db: Session = Depends(get_db)):
     fornecedores = db.query(models.Fornecedor).filter(models.Fornecedor.empresa_id == usuario.empresa_id).order_by(models.Fornecedor.nome).all()
     return api_response([{"id": fornecedor.id, "nome": fornecedor.nome, "documento": fornecedor.documento, "email": fornecedor.email, "telefone": fornecedor.telefone, "ativo": fornecedor.ativo} for fornecedor in fornecedores])
 
