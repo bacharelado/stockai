@@ -203,7 +203,7 @@
         const form = event.target;
         try {
             const data = normalizeFormData(form);
-            data.preco = Number(data.preco); data.estoque_atual = Number(data.estoque_atual); data.estoque_minimo = Number(data.estoque_minimo);
+            data.preco = Number(data.preco); data.custo = Number(data.custo); data.estoque_atual = Number(data.estoque_atual); data.estoque_minimo = Number(data.estoque_minimo);
             setLoading(form, true);
             products.push(await api("/produtos", { method: "POST", body: JSON.stringify(data) }));
             form.reset(); closeModal("create-modal"); page = 1; render(); showToast("Produto cadastrado.");
@@ -226,7 +226,7 @@
         const form = event.target;
         try {
             const data = normalizeFormData(form);
-            data.preco = Number(data.preco); data.estoque_minimo = Number(data.estoque_minimo);
+            data.preco = Number(data.preco); data.custo = Number(data.custo); data.estoque_minimo = Number(data.estoque_minimo);
             setLoading(form, true);
             const product = await api(`/produtos/${editingId}`, { method: "PUT", body: JSON.stringify(data) });
             products = products.map((item) => item.id === product.id ? product : item);
@@ -284,7 +284,7 @@
             if (!product) return;
             editingId = product.id;
             const form = $("#edit-form");
-            Object.entries({ nome: product.nome, categoria: product.categoria || "", preco: product.preco, estoque_minimo: product.estoque_minimo }).forEach(([name, value]) => {
+            Object.entries({ nome: product.nome, categoria: product.categoria || "", preco: product.preco, custo: product.custo, codigo_barras: product.codigo_barras || "", estoque_minimo: product.estoque_minimo }).forEach(([name, value]) => {
                 form.elements[name].value = value;
             });
             openModal("edit-modal");

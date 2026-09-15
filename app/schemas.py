@@ -17,10 +17,10 @@ class ProdutoCreate(BaseModel):
 class ProdutoUpdate(BaseModel):
     nome: str = Field(..., min_length=1, max_length=120)
     categoria: Optional[str] = Field(None, max_length=80)
-    preco: float = Field(0.0, ge=0, le=100000000)
-    custo: float = Field(0.0, ge=0, le=100000000)
-    codigo_barras: Optional[str] = Field(None, max_length=64)
-    estoque_minimo: int = Field(0, ge=0, le=100000000)
+    preco: float = Field(..., ge=0, le=100000000)
+    custo: float = Field(..., ge=0, le=100000000)
+    codigo_barras: Optional[str] = Field(..., max_length=64)
+    estoque_minimo: int = Field(..., ge=0, le=100000000)
 
 
 class ProdutoOut(BaseModel):
