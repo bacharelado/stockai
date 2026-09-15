@@ -14,6 +14,7 @@ Hoje, o StockAI já centraliza produtos, quantidades, movimentações, alertas, 
 - Alerta quando a quantidade chega ao mínimo definido
 - Sugestões de reposição no painel
 - Filtros, busca e ordenação
+- Paginação server-side na API de produtos, com filtros e ordenação controlados pelo backend
 - Tema claro e escuro
 - Exportação de produtos em CSV
 - Relatórios de estoque com dados reais
@@ -79,6 +80,28 @@ A página inicial funciona como apresentação comercial do StockAI e inclui:
 - Controle de sessão com duração limitada
 - Isolamento de dados por empresa
 - Saída de estoque protegida contra saldo insuficiente
+
+## API de produtos
+
+A rota autenticada `GET /produtos` usa paginação server-side. O banco executa o `COUNT`, filtros, ordenação e `LIMIT/OFFSET`; a aplicação não precisa carregar todos os produtos para montar uma página.
+
+Parâmetros disponíveis:
+
+- `page`: página iniciando em 1
+- `page_size`: 1–100, padrão 20
+- `busca`: busca por nome ou categoria
+- `status`: `todos`, `ok` ou `baixo`
+- `categoria`: filtro exato por categoria
+- `ordenar_por`: `nome`, `preco` ou `estoque_atual`
+- `ordem`: `asc` ou `desc`
+
+Exemplo:
+
+```text
+GET /produtos?page=2&page_size=20&busca=cafe&status=baixo&ordenar_por=estoque_atual&ordem=asc
+```
+
+A resposta contém `items` e os metadados `page`, `page_size`, `total` e `total_pages`. O resultado continua restrito à empresa do usuário autenticado e exclui produtos arquivados.
 
 ## Visão da plataforma
 
@@ -262,7 +285,7 @@ A área de relatórios usa os dados reais do estoque e apresenta:
 
 ## Testes
 
-Já existem testes automatizados com `unittest` em `tests/`: regras de planos (`test_plans.py`), cabeçalhos de segurança (`test_security_headers.py`), segurança do cadastro de empresas (`test_signup_security.py`) e rate limiting compartilhado (`test_rate_limit.py`).
+Já existem testes automatizados com `unittest` em `tests/`: regras de planos (`test_plans.py`), cabeçalhos de segurança (`test_security_headers.py`), segurança do cadastro de empresas (`test_signup_security.py`), rate limiting compartilhado (`test_rate_limit.py`) e hardening/paginação de produtos (`test_security_hardening.py`).
 
 Para executar:
 
