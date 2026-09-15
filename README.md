@@ -124,6 +124,7 @@ Deploy
 
 ## Documentation
 
+- [Documentation index](docs/README.md)
 - [Engineering case study](docs/PORTFOLIO.md)
 - [Architecture overview](docs/ARCHITECTURE.md)
 - [Security notes](docs/SECURITY.md)
@@ -131,6 +132,25 @@ Deploy
 - [Product roadmap](docs/ROADMAP.md)
 - [Engineering decisions](docs/DECISIONS.md)
 - [Contributing](docs/CONTRIBUTING.md)
+- [Product pitch](docs/product/PITCH.md)
+- [Elevator pitch](docs/product/ELEVATOR_PITCH.md)
+
+## Repository structure
+
+```text
+stockai/
+├── app/                  # FastAPI application, templates and static assets
+├── migrations/           # Alembic database migrations
+├── tests/                # Automated and regression tests
+├── docs/                 # Product and engineering documentation
+│   └── product/          # Pitches and product positioning
+├── .github/              # Repository-level security and workflow configuration
+├── .env.example          # Environment variable template
+├── requirements.txt      # Python dependencies
+└── README.md             # Project entry point
+```
+
+The root intentionally contains only files that help install, run or understand the project. Supporting documentation is grouped under `docs/`.
 
 ## Roadmap
 
