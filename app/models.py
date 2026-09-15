@@ -32,15 +32,31 @@ class Usuario(Base):
     empresa_id = Column(Integer, ForeignKey("empresas.id"), nullable=False, index=True)
     nome = Column(String(120), nullable=False)
     username = Column(String(80), nullable=False, unique=True, index=True)
+    email = Column(String(254), nullable=True, unique=True, index=True)
     password_hash = Column(String(255), nullable=False)
     perfil = Column(String(24), nullable=False, default="operador")
     ativo = Column(Boolean, nullable=False, default=True)
     plataforma_admin = Column(Boolean, nullable=False, default=False)
+    session_version = Column(Integer, nullable=False, default=1)
     criado_em = Column(DateTime(timezone=True), nullable=False, default=agora_utc)
     atualizado_em = Column(DateTime(timezone=True), nullable=False, default=agora_utc, onupdate=agora_utc)
 
     empresa = relationship("Empresa", back_populates="usuarios")
     movimentacoes = relationship("Movimentacao", back_populates="usuario")
+    password_reset_tokens = relationship("PasswordResetToken", back_populates="usuario", cascade="all, delete-orphan")
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash = Column(String(64), nullable=False, unique=True, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    used_at = Column(DateTime(timezone=True), nullable=True)
+    criado_em = Column(DateTime(timezone=True), nullable=False, default=agora_utc)
+
+    usuario = relationship("Usuario", back_populates="password_reset_tokens")
 
 
 class Filial(Base):
