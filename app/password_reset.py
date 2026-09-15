@@ -97,8 +97,8 @@ def _usuario_por_sessao(request: Request, db: Session) -> models.Usuario:
     return usuario
 
 
-def _csrf(request: Request) -> None:
-    token = request.headers.get("X-CSRF-Token")
+def _csrf(request: Request, form_token: str | None = None) -> None:
+    token = request.headers.get("X-CSRF-Token") or form_token
     if not token or not secrets.compare_digest(token, request.session.get("csrf_token", "")):
         raise HTTPException(status_code=403, detail="Invalid CSRF token")
 
@@ -166,12 +166,12 @@ def reset_password(token: str = Form(...), password: str = Form(...), confirm_pa
 @router.get("/change-password", response_class=HTMLResponse, include_in_schema=False)
 def change_password_page(request: Request, db: Session = Depends(get_db)):
     usuario = _usuario_por_sessao(request, db)
-    return _page("Alterar senha", f"<h1>Alterar senha</h1><p>Conta: {html.escape(usuario.username)}</p><form method='post' action='/change-password'><label for='current_password'>Senha atual<input id='current_password' name='current_password' type='password' autocomplete='current-password' required></label><label for='new_password'>Nova senha<input id='new_password' name='new_password' type='password' autocomplete='new-password' minlength='12' maxlength='256' required></label><label for='confirm_password'>Confirmar nova senha<input id='confirm_password' name='confirm_password' type='password' autocomplete='new-password' minlength='12' maxlength='256' required></label><button type='submit'>Alterar senha</button></form><p><a href='/dashboard'>Voltar ao painel</a></p>")
+    return _page("Alterar senha", f"<h1>Alterar senha</h1><p>Conta: {html.escape(usuario.username)}</p><form method='post' action='/change-password'><input type='hidden' name='csrf_token' value='{html.escape(request.session.get('csrf_token', ''), quote=True)}'><label for='current_password'>Senha atual<input id='current_password' name='current_password' type='password' autocomplete='current-password' required></label><label for='new_password'>Nova senha<input id='new_password' name='new_password' type='password' autocomplete='new-password' minlength='12' maxlength='256' required></label><label for='confirm_password'>Confirmar nova senha<input id='confirm_password' name='confirm_password' type='password' autocomplete='new-password' minlength='12' maxlength='256' required></label><button type='submit'>Alterar senha</button></form><p><a href='/dashboard'>Voltar ao painel</a></p>")
 
 
 @router.post("/change-password", response_class=HTMLResponse, include_in_schema=False)
-def change_password(request: Request, current_password: str = Form(...), new_password: str = Form(...), confirm_password: str = Form(...), db: Session = Depends(get_db)):
-    _csrf(request)
+def change_password(request: Request, current_password: str = Form(...), new_password: str = Form(...), confirm_password: str = Form(...), csrf_token: str = Form(...), db: Session = Depends(get_db)):
+    _csrf(request, csrf_token)
     usuario = _usuario_por_sessao(request, db)
     if not services.verificar_senha(current_password, usuario.password_hash):
         raise HTTPException(status_code=400, detail="Senha atual inválida.")
