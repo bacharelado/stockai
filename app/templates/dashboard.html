@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token }}" />
     <title>StockAI | Controle de estoque</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/dashboard.css" />
     <link rel="stylesheet" href="/static/stockai-theme.css?v=1" />
@@ -51,7 +51,7 @@
             <section class="getting-started" aria-labelledby="getting-started-title">
                 <div class="getting-started-head"><div><h2 id="getting-started-title">Vamos começar</h2><p>Siga estes passos para começar a usar o sistema.</p></div><span class="getting-started-badge">Primeiros passos</span></div>
                 <div class="getting-started-grid">
-                    {% if pode_gerenciar %}<a class="getting-started-action" href="#" onclick="document.getElementById('open-create')?.click(); return false;"><span class="getting-started-icon">1</span><div><strong>Cadastre seu primeiro produto</strong><span>Informe o nome, o preço e o estoque mínimo.</span></div></a>{% else %}<a class="getting-started-action" href="#produtos"><span class="getting-started-icon">1</span><div><strong>Confira os produtos</strong><span>Veja os produtos da sua empresa.</span></div></a>{% endif %}
+                    {% if pode_gerenciar %}<a class="getting-started-action" href="#create-modal" data-open-create><span class="getting-started-icon">1</span><div><strong>Cadastre seu primeiro produto</strong><span>Informe o nome, o preço e o estoque mínimo.</span></div></a>{% else %}<a class="getting-started-action" href="#produtos"><span class="getting-started-icon">1</span><div><strong>Confira os produtos</strong><span>Veja os produtos da sua empresa.</span></div></a>{% endif %}
                     <a class="getting-started-action" href="#alertas"><span class="getting-started-icon">2</span><div><strong>Veja os alertas</strong><span>O StockAI avisa quando um produto está acabando.</span></div></a>
                     <a class="getting-started-action" href="#produtos"><span class="getting-started-icon">3</span><div><strong>Registre entradas e saídas</strong><span>Anote tudo que entra e sai do estoque.</span></div></a>
                 </div>
@@ -80,9 +80,9 @@
     </div>
     {% include 'partials/modals.html' %}
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script id="initial-products" type="application/json">{{ produtos|tojson }}</script>
-    <script id="user-permissions" type="application/json">{{ {"canManage": pode_gerenciar}|tojson }}</script>
-    <script src="/static/dashboard.js?v=2" defer></script>
-    <script src="/static/dashboard-insights.js?v=2" defer></script>
+    <script id="initial-products" type="application/json" nonce="{{ csp_nonce }}">{{ produtos|tojson }}</script>
+    <script id="user-permissions" type="application/json" nonce="{{ csp_nonce }}">{{ {"canManage": pode_gerenciar}|tojson }}</script>
+    <script src="/static/dashboard.js?v=3" defer></script>
+    <script src="/static/dashboard-insights.js?v=3" defer></script>
 </body>
 </html>
