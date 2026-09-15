@@ -78,29 +78,61 @@ def validar_nome_e_categoria(nome: str | None, categoria: str | None = None):
     return nome_limpo, categoria_limpa
 
 
-def listar_produtos_db(db: Session, empresa_id: int, limit: int | None = None, offset: int = 0):
-    query = db.query(models.Produto).filter(
+def _produtos_base_query(db: Session, empresa_id: int):
+    return db.query(models.Produto).filter(
         models.Produto.empresa_id == empresa_id,
         models.Produto.ativo.is_(True),
-    ).order_by(models.Produto.nome)
+    )
+
+
+def listar_produtos_db(db: Session, empresa_id: int, limit: int | None = None, offset: int = 0):
+    query = _produtos_base_query(db, empresa_id).order_by(models.Produto.nome)
     if limit is not None:
         query = query.limit(limit).offset(offset)
     return query.all()
 
 
 def contar_produtos_db(db: Session, empresa_id: int) -> int:
-    return db.query(models.Produto).filter(
-        models.Produto.empresa_id == empresa_id,
-        models.Produto.ativo.is_(True),
-    ).count()
+    return _produtos_base_query(db, empresa_id).count()
 
 
-def buscar_produto_db(db: Session, empresa_id: int, produto_id: int):
-    return db.query(models.Produto).filter(
-        models.Produto.id == produto_id,
-        models.Produto.empresa_id == empresa_id,
-        models.Produto.ativo.is_(True),
-    ).first()
+def listar_produtos_paginado_db(
+    db: Session,
+    empresa_id: int,
+    *,
+    page: int,
+    page_size: int,
+    busca: str | None = None,
+    status: str = "todos",
+    categoria: str | None = None,
+    ordenar_por: str = "nome",
+    ordem: str = "asc",
+):
+    query = _produtos_base_query(db, empresa_id)
+    if busca:
+        termo = f"%{busca.strip()}%"
+        query = query.filter(
+            models.Produto.nome.ilike(termo) |
+            models.Produto.categoria.ilike(termo)
+        )
+    if categoria:
+        query = query.filter(models.Produto.categoria == categoria)
+    if status == "baixo":
+        query = query.filter(models.Produto.estoque_atual <= models.Produto.estoque_minimo)
+    elif status == "ok":
+        query = query.filter(models.Produto.estoque_atual > models.Produto.estoque_minimo)
+
+    campos = {
+        "nome": models.Produto.nome,
+        "preco": models.Produto.preco,
+        "estoque_atual": models.Produto.estoque_atual,
+    }
+    coluna = campos.get(ordenar_por, models.Produto.nome)
+    query = query.order_by(coluna.desc() if ordem == "desc" else coluna.asc(), models.Produto.id.asc())
+
+    total = query.count()
+    produtos = query.offset((page - 1) * page_size).limit(page_size).all()
+    return produtos, total
 
 
 def listar_movimentacoes_db(db: Session, empresa_id: int, limit: int = 100, offset: int = 0):
