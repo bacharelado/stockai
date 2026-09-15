@@ -1,6 +1,4 @@
-# StockAI
-
-## Pitch de elevador
+# StockAI — Pitch de elevador
 
 O StockAI é um sistema simples e seguro para pequenos negócios controlarem seu estoque sem depender de planilhas confusas.
 
@@ -12,7 +10,7 @@ Cada usuário acessa apenas as funções compatíveis com seu perfil, enquanto a
 
 ## Versão de 30 segundos
 
-"O StockAI ajuda pequenos negócios a controlar o estoque de forma simples, segura e organizada. Em vez de depender de planilhas espalhadas, a equipe acompanha produtos, quantidades, entradas, saídas e alertas em um painel único. O sistema também diferencia as funções de operadores, gerentes e administradores, garantindo que cada pessoa tenha o acesso adequado. Uma nova empresa cria sua conta em poucos minutos, com seus dados totalmente isolados dos demais clientes. Assim, o negócio reduz erros, evita falta de produtos e toma decisões com mais confiança."
+“O StockAI ajuda pequenos negócios a controlar o estoque de forma simples, segura e organizada. Em vez de depender de planilhas espalhadas, a equipe acompanha produtos, quantidades, entradas, saídas e alertas em um painel único. O sistema também diferencia as funções de operadores, gerentes e administradores, garantindo que cada pessoa tenha o acesso adequado. Uma nova empresa cria sua conta em poucos minutos, com seus dados totalmente isolados dos demais clientes. Assim, o negócio reduz erros, evita falta de produtos e toma decisões com mais confiança.”
 
 ## Para quem é
 
