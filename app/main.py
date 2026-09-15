@@ -5,6 +5,7 @@ import secrets
 import time
 from io import StringIO
 from pathlib import Path
+from threading import Lock
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -32,6 +33,7 @@ from app.config import (
 from app.database import create_tables, get_db
 from app.security_headers import HSTS_VALUE
 from app.services import (
+    DUMMY_PASSWORD_HASH,
     buscar_produto_db,
     csv_seguro,
     listar_movimentacoes_db,
@@ -112,11 +114,35 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 
 RATE_LIMIT_WINDOW_SECONDS = 60
 RATE_LIMIT_MAX_REQUESTS = 120
+AUTH_RATE_LIMIT_WINDOW_SECONDS = 5 * 60
+AUTH_RATE_LIMIT_MAX_IP_ATTEMPTS = 20
+AUTH_RATE_LIMIT_MAX_USERNAME_ATTEMPTS = 10
 _rate_limits: dict[str, list[float]] = {}
+_auth_ip_attempts: dict[str, list[float]] = {}
+_auth_username_attempts: dict[str, list[float]] = {}
+_rate_limit_lock = Lock()
 
 
 def api_response(payload, status_code=200):
     return JSONResponse(status_code=status_code, content={"success": status_code < 400, "data": payload})
+
+
+def _limitar_login(ip: str, username: str) -> bool:
+    agora = time.monotonic()
+    chave_usuario = username.strip().lower()
+    with _rate_limit_lock:
+        ip_attempts = [item for item in _auth_ip_attempts.get(ip, []) if agora - item < AUTH_RATE_LIMIT_WINDOW_SECONDS]
+        username_attempts = [item for item in _auth_username_attempts.get(chave_usuario, []) if agora - item < AUTH_RATE_LIMIT_WINDOW_SECONDS]
+        bloqueado = len(ip_attempts) >= AUTH_RATE_LIMIT_MAX_IP_ATTEMPTS or len(username_attempts) >= AUTH_RATE_LIMIT_MAX_USERNAME_ATTEMPTS
+        if bloqueado:
+            _auth_ip_attempts[ip] = ip_attempts
+            _auth_username_attempts[chave_usuario] = username_attempts
+            return False
+        ip_attempts.append(agora)
+        username_attempts.append(agora)
+        _auth_ip_attempts[ip] = ip_attempts
+        _auth_username_attempts[chave_usuario] = username_attempts
+        return True
 
 
 @app.get("/login", response_class=HTMLResponse, include_in_schema=False)
@@ -128,10 +154,20 @@ def login_page(request: Request):
 
 @app.post("/login", include_in_schema=False)
 def login(request: Request, username: str = Form(...), password: str = Form(...)):
+    client_ip = request.client.host if request.client else "unknown"
+    username_normalized = username.strip().lower()
+    if not _limitar_login(client_ip, username_normalized):
+        return templates.TemplateResponse(
+            request=request, name="login.html", context={"error": "Muitas tentativas. Tente novamente em alguns minutos."}, status_code=429
+        )
+
     db = next(get_db())
+    valido = False
     try:
-        usuario = db.query(models.Usuario).filter(models.Usuario.username == username.strip()).first()
-        valido = usuario and usuario.ativo and usuario.empresa.ativa and verificar_senha(password, usuario.password_hash)
+        usuario = db.query(models.Usuario).filter(models.Usuario.username == username_normalized).first()
+        password_hash = usuario.password_hash if usuario else DUMMY_PASSWORD_HASH
+        senha_valida = verificar_senha(password, password_hash)
+        valido = bool(usuario and usuario.ativo and usuario.empresa.ativa and senha_valida)
         if valido:
             user_id = usuario.id
             empresa_id = usuario.empresa_id
@@ -196,11 +232,16 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def protecoes_http(request: Request, call_next):
     client = request.client.host if request.client else "unknown"
     now = time.monotonic()
-    requests = [item for item in _rate_limits.get(client, []) if now - item < RATE_LIMIT_WINDOW_SECONDS]
-    if len(requests) >= RATE_LIMIT_MAX_REQUESTS:
-        return JSONResponse(status_code=429, content={"detail": "Muitas requisicoes. Tente novamente em instantes."})
-    requests.append(now)
-    _rate_limits[client] = requests
+    with _rate_limit_lock:
+        requests = [item for item in _rate_limits.get(client, []) if now - item < RATE_LIMIT_WINDOW_SECONDS]
+        if len(requests) >= RATE_LIMIT_MAX_REQUESTS:
+            return JSONResponse(status_code=429, content={"detail": "Muitas requisicoes. Tente novamente em instantes."})
+        requests.append(now)
+        _rate_limits[client] = requests
+        if len(_rate_limits) > 10000:
+            expirados = [key for key, values in _rate_limits.items() if not values or now - values[-1] >= RATE_LIMIT_WINDOW_SECONDS]
+            for key in expirados[:5000]:
+                _rate_limits.pop(key, None)
 
     content_length = request.headers.get("content-length")
     if content_length:
@@ -210,6 +251,7 @@ async def protecoes_http(request: Request, call_next):
         except ValueError:
             return JSONResponse(status_code=400, content={"detail": "Cabecalho invalido"})
 
+    request.state.csp_nonce = secrets.token_urlsafe(16)
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
@@ -219,7 +261,7 @@ async def protecoes_http(request: Request, call_next):
         response.headers["Strict-Transport-Security"] = HSTS_VALUE
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "script-src 'self' 'nonce-" + request.state.csp_nonce + "' https://cdn.jsdelivr.net; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'"
@@ -287,7 +329,7 @@ def criar_produto(produto: schemas.ProdutoCreate, usuario: models.Usuario = Depe
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     codigo_barras = (produto.codigo_barras or "").strip() or None
-    if codigo_barras and db.query(models.Produto).filter(models.Produto.empresa_id == usuario.empresa_id, models.Produto.codigo_barras == codigo_barras).first():
+    if codigo_barras and db.query(models.Produto).filter(models.Produto.empresa_id == usuario.empresa_id, models.Produto.codigo_barras == codigo_barras, models.Produto.ativo.is_(True)).first():
         raise HTTPException(status_code=409, detail="Codigo de barras ja cadastrado")
 
     novo = models.Produto(
@@ -324,6 +366,7 @@ def atualizar_produto(produto_id: int, dados: schemas.ProdutoUpdate, usuario: mo
         models.Produto.empresa_id == usuario.empresa_id,
         models.Produto.codigo_barras == codigo_barras,
         models.Produto.id != produto_id,
+        models.Produto.ativo.is_(True),
     ).first():
         raise HTTPException(status_code=409, detail="Codigo de barras ja cadastrado")
 
@@ -344,11 +387,10 @@ def excluir_produto(produto_id: int, usuario: models.Usuario = Depends(require_m
     produto = buscar_produto_db(db, usuario.empresa_id, produto_id)
     if not produto:
         raise HTTPException(status_code=404, detail="Produto nao encontrado")
-    db.query(models.Movimentacao).filter(models.Movimentacao.produto_id == produto_id, models.Movimentacao.empresa_id == usuario.empresa_id).delete()
-    registrar_auditoria(db, usuario.empresa_id, usuario.id, "excluir", "produto", produto.id, {"nome": produto.nome})
-    db.delete(produto)
+    produto.ativo = False
+    registrar_auditoria(db, usuario.empresa_id, usuario.id, "excluir", "produto", produto.id, {"nome": produto.nome, "preservado": True})
     db.commit()
-    return api_response({"message": "Produto excluido com sucesso"})
+    return api_response({"message": "Produto arquivado com sucesso"})
 
 
 @app.get("/produtos", dependencies=[Depends(require_auth)])
@@ -366,7 +408,7 @@ def registrar_entrada(produto_id: int, mov: schemas.MovimentacaoCreate, usuario:
         raise HTTPException(status_code=400, detail="Quantidade deve ser maior que zero")
     db.execute(
         update(models.Produto)
-        .where(models.Produto.id == produto_id, models.Produto.empresa_id == usuario.empresa_id)
+        .where(models.Produto.id == produto_id, models.Produto.empresa_id == usuario.empresa_id, models.Produto.ativo.is_(True))
         .values(estoque_atual=models.Produto.estoque_atual + mov.quantidade)
     )
     db.add(models.Movimentacao(empresa_id=usuario.empresa_id, produto_id=produto_id, usuario_id=usuario.id, tipo="entrada", quantidade=mov.quantidade, observacao=mov.observacao))
@@ -385,7 +427,7 @@ def registrar_saida(produto_id: int, mov: schemas.MovimentacaoCreate, usuario: m
         raise HTTPException(status_code=400, detail="Quantidade deve ser maior que zero")
     result = db.execute(
         update(models.Produto)
-        .where(models.Produto.id == produto_id, models.Produto.empresa_id == usuario.empresa_id, models.Produto.estoque_atual >= mov.quantidade)
+        .where(models.Produto.id == produto_id, models.Produto.empresa_id == usuario.empresa_id, models.Produto.ativo.is_(True), models.Produto.estoque_atual >= mov.quantidade)
         .values(estoque_atual=models.Produto.estoque_atual - mov.quantidade)
     )
     if result.rowcount != 1:
@@ -460,6 +502,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
             "perfil": usuario.perfil,
             "pode_gerenciar": usuario.perfil in {"admin", "gerente"},
             "usuarios_admin": usuarios_admin,
+            "csp_nonce": request.state.csp_nonce,
         },
     )
 
