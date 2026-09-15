@@ -81,10 +81,11 @@ class Produto(Base):
     custo = Column(Float, nullable=False, default=0.0)
     estoque_atual = Column(Integer, nullable=False, default=0)
     estoque_minimo = Column(Integer, nullable=False, default=0)
+    ativo = Column(Boolean, nullable=False, default=True, index=True)
     criado_em = Column(DateTime(timezone=True), nullable=False, default=agora_utc)
 
     empresa = relationship("Empresa", back_populates="produtos")
-    movimentacoes = relationship("Movimentacao", back_populates="produto", cascade="all, delete-orphan")
+    movimentacoes = relationship("Movimentacao", back_populates="produto")
 
 
 class Movimentacao(Base):
