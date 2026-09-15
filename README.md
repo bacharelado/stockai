@@ -11,6 +11,14 @@
   <a href="https://github.com/bacharelado/stockai/blob/main/docs/PORTFOLIO.md">Engineering Case Study</a>
 </p>
 
+<p align="center">
+  <img src="https://github.com/bacharelado/stockai/actions/workflows/tests.yml/badge.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/FastAPI-application-009688" alt="FastAPI">
+  <img src="https://img.shields.io/badge/PostgreSQL-production-4169E1" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/License-see%20repository-lightgrey" alt="License">
+</p>
+
 ---
 
 ## Why StockAI
@@ -122,10 +130,28 @@ Merge to main
 Deploy
 ```
 
+## Repository structure
+
+```text
+stockai/
+├── app/             # application code
+├── migrations/      # Alembic migrations
+├── tests/            # automated tests
+├── docs/             # engineering and product documentation
+│   └── product/      # pitches and product positioning
+├── .github/          # CI and security configuration
+├── .env.example      # local environment template
+├── alembic.ini
+├── requirements.txt
+└── README.md
+```
+
+The repository root is intentionally kept small. Product, engineering and support documentation live under `docs/` so the project is easier to navigate for contributors, recruiters and visitors.
+
 ## Documentation
 
-- [Documentation index](docs/README.md)
 - [Engineering case study](docs/PORTFOLIO.md)
+- [Documentation index](docs/README.md)
 - [Architecture overview](docs/ARCHITECTURE.md)
 - [Security notes](docs/SECURITY.md)
 - [Operations and validation](docs/OPERATIONS.md)
@@ -134,23 +160,6 @@ Deploy
 - [Contributing](docs/CONTRIBUTING.md)
 - [Product pitch](docs/product/PITCH.md)
 - [Elevator pitch](docs/product/ELEVATOR_PITCH.md)
-
-## Repository structure
-
-```text
-stockai/
-├── app/                  # FastAPI application, templates and static assets
-├── migrations/           # Alembic database migrations
-├── tests/                # Automated and regression tests
-├── docs/                 # Product and engineering documentation
-│   └── product/          # Pitches and product positioning
-├── .github/              # Repository-level security and workflow configuration
-├── .env.example          # Environment variable template
-├── requirements.txt      # Python dependencies
-└── README.md             # Project entry point
-```
-
-The root intentionally contains only files that help install, run or understand the project. Supporting documentation is grouped under `docs/`.
 
 ## Roadmap
 
@@ -206,7 +215,9 @@ STOCKAI_AUTO_CREATE_SCHEMA=false
 
 ## Testing
 
-Run the automated suite with:
+Every push and pull request targeting `main` runs the automated test suite through GitHub Actions.
+
+Run the same suite locally with:
 
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
