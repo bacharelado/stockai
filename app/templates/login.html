@@ -1,90 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entrar | StockAI</title>
-    <style>
-        :root { color: #172554; font-family: "Segoe UI", Arial, sans-serif; }
-        * { box-sizing: border-box; }
-        body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; overflow: hidden; background: #eef3fb; }
-        body::before, body::after { content: ""; position: fixed; border-radius: 50%; z-index: -1; filter: blur(1px); }
-        body::before { width: 520px; height: 520px; top: -250px; left: -160px; background: #7aa7dc; opacity: .32; animation: float-a 9s ease-in-out infinite; }
-        body::after { width: 460px; height: 460px; right: -160px; bottom: -210px; background: #f0c85a; opacity: .22; animation: float-b 11s ease-in-out infinite; }
-        .layout { width: min(100%, 900px); min-height: 570px; display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #ffffffc7; border-radius: 24px; overflow: hidden; background: #fff; box-shadow: 0 26px 70px #17255424; animation: card-in .7s cubic-bezier(.2,.8,.2,1) both; }
-        .intro { position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 46px; overflow: hidden; color: white; background: linear-gradient(145deg, #173f7a, #2466ad); animation: intro-in .8s .08s cubic-bezier(.2,.8,.2,1) both; }
-        .intro::after { content: ""; position: absolute; width: 280px; height: 280px; right: -145px; bottom: -130px; border: 36px solid #f0c85a; border-radius: 50%; opacity: .28; animation: ring-float 8s ease-in-out infinite; }
-        .brand { display: flex; align-items: center; gap: 11px; font-weight: 800; font-size: 21px; letter-spacing: -.5px; animation: fade-up .65s .2s both; }
-        .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid #dceaff; border-radius: 10px; font-size: 18px; transition: transform .25s ease, background .25s ease; }
-        .brand:hover .brand-mark { transform: rotate(-6deg) scale(1.06); background: #ffffff14; }
-        .intro h1 { max-width: 290px; margin: 0; font-size: clamp(31px, 4vw, 43px); line-height: 1.08; letter-spacing: -1.8px; animation: fade-up .7s .32s both; }
-        .intro p { max-width: 285px; margin: 16px 0 0; color: #e1ebf8; line-height: 1.55; animation: fade-up .7s .42s both; }
-        .secure-note { position: relative; z-index: 1; display: flex; align-items: center; gap: 9px; color: #e4edf9; font-size: 13px; animation: fade-up .7s .5s both; }
-        .secure-note span { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 50%; background: #ffffff20; animation: soft-pulse 2.6s ease-in-out infinite; }
-        main { display: flex; align-items: center; padding: 48px; }
-        .form-wrap { width: 100%; max-width: 310px; margin: auto; animation: fade-up .7s .18s both; }
-        .eyebrow { margin: 0 0 9px; color: #245f9f; font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
-        h2 { margin: 0; color: #172554; font-size: 28px; letter-spacing: -1px; }
-        .lead { margin: 10px 0 28px; color: #64748b; font-size: 14px; line-height: 1.5; }
-        label { display: block; margin-top: 17px; color: #334155; font-size: 13px; font-weight: 750; animation: fade-up .55s .35s both; }
-        input { width: 100%; margin-top: 7px; padding: 12px 13px; outline: none; color: #172554; border: 1px solid #cbd5e1; border-radius: 10px; background: #fbfdff; font: inherit; transition: border .18s, box-shadow .18s, transform .18s; }
-        input:focus { border-color: #2466ad; box-shadow: 0 0 0 4px #2466ad1a; transform: translateY(-1px); }
-        button { width: 100%; margin-top: 27px; padding: 13px; border: 0; border-radius: 10px; color: white; background: #245f9f; box-shadow: 0 8px 18px #245f9f33; font: 750 14px inherit; cursor: pointer; transition: transform .18s, background .18s, box-shadow .18s; animation: fade-up .55s .48s both; }
-        button:hover { background: #194d85; transform: translateY(-2px); box-shadow: 0 12px 24px #245f9f38; }
-        button:active { transform: translateY(0); }
-        button:focus-visible { outline: 3px solid #f0c85a; outline-offset: 2px; }
-        .error { margin: 0 0 18px; padding: 11px 12px; color: #9d251d; border: 1px solid #ffc4bd; border-radius: 9px; background: #fff0ee; font-size: 13px; animation: shake-in .45s both; }
-        .signup-link { margin: 18px 0 0; color: #64748b; font-size: 13px; text-align: center; animation: fade-up .55s .55s both; }
-        .signup-link a { color: #245f9f; font-weight: 750; text-decoration: none; }
-        .signup-link a:hover { text-decoration: underline; }
-        .footer { display: grid; gap: 9px; margin: 22px 0 0; padding: 14px; color: #8090a5; border: 1px solid #dbe3ed; border-radius: 12px; background: #f7f9fc; font-size: 11px; text-align: center; line-height: 1.45; animation: fade-up .6s .62s both; }
-        .footer-title { color: #334155; font-size: 11px; font-weight: 750; }
-        .footer-contact { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; }
-        .footer-contact a { color: #245f9f; font-weight: 700; text-decoration: none; }
-        .footer-contact a:hover { text-decoration: underline; }
-        .whatsapp-button { display: inline-flex; width: 100%; align-items: center; justify-content: center; gap: 7px; padding: 10px 12px; border-radius: 9px; color: #fff !important; background: #128c5a; box-shadow: 0 7px 16px rgba(18, 140, 90, .18); font-size: 12px; font-weight: 750 !important; text-decoration: none !important; transition: transform .18s, background .18s, box-shadow .18s; animation: whatsapp-pulse 2.8s 1.5s ease-in-out infinite; }
-        .whatsapp-button:hover { background: #0d7449; transform: translateY(-2px); box-shadow: 0 11px 22px rgba(18, 140, 90, .25); animation-play-state: paused; }
-        .footer-brand { color: #94a3b8; font-size: 10px; }
-        @keyframes card-in { from { opacity: 0; transform: translateY(20px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes intro-in { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes float-a { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(35px,25px) scale(1.05); } }
-        @keyframes float-b { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px,-25px) scale(1.06); } }
-        @keyframes ring-float { 0%,100% { transform: translate(0,0) rotate(0); } 50% { transform: translate(-12px,-14px) rotate(8deg); } }
-        @keyframes soft-pulse { 0%,100% { box-shadow: 0 0 0 0 #ffffff00; } 50% { box-shadow: 0 0 0 7px #ffffff0d; } }
-        @keyframes whatsapp-pulse { 0%,70%,100% { box-shadow: 0 7px 16px rgba(18, 140, 90, .18); } 82% { box-shadow: 0 0 0 7px rgba(18, 140, 90, .10), 0 10px 22px rgba(18, 140, 90, .24); } }
-        @keyframes shake-in { 0% { opacity: 0; transform: translateX(-8px); } 60% { transform: translateX(3px); } 100% { opacity: 1; transform: translateX(0); } }
-        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
-        @media (max-width: 680px) { body { padding: 16px; overflow: auto; } .layout { min-height: auto; grid-template-columns: 1fr; } .intro { min-height: 205px; padding: 28px; } .intro h1 { margin-top: 28px; font-size: 29px; } .intro p, .secure-note { display: none; } main { padding: 34px 27px; } }
-    </style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Entrar | StockAI</title>
+<style>
+:root{color:#172554;font-family:"Segoe UI",Arial,sans-serif}*{box-sizing:border-box}body{min-height:100vh;margin:0;display:grid;place-items:center;padding:24px;background:#eef3fb}.layout{width:min(100%,900px);min-height:570px;display:grid;grid-template-columns:1fr 1fr;border-radius:24px;overflow:hidden;background:#fff;box-shadow:0 26px 70px #17255424}.intro{display:flex;flex-direction:column;justify-content:space-between;padding:46px;color:#fff;background:linear-gradient(145deg,#173f7a,#2466ad)}.brand{font-weight:800;font-size:21px}.intro h1{max-width:290px;margin:0;font-size:40px;line-height:1.08}.intro p{max-width:285px;color:#e1ebf8;line-height:1.55}.secure{color:#e4edf9;font-size:13px}main{display:flex;align-items:center;padding:48px}.form-wrap{width:100%;max-width:310px;margin:auto}.eyebrow{margin:0 0 9px;color:#245f9f;font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase}h2{margin:0;color:#172554;font-size:28px}.lead{margin:10px 0 28px;color:#64748b;font-size:14px;line-height:1.5}.error,.success{margin:0 0 18px;padding:11px 12px;border-radius:9px;font-size:13px}.error{color:#9d251d;border:1px solid #ffc4bd;background:#fff0ee}.success{color:#0b5c46;border:1px solid #a7e3cf;background:#ecfbf4}label{display:block;margin-top:17px;color:#334155;font-size:13px;font-weight:750}input{width:100%;margin-top:7px;padding:12px 13px;outline:none;color:#172554;border:1px solid #cbd5e1;border-radius:10px;background:#fbfdff;font:inherit}button{width:100%;margin-top:27px;padding:13px;border:0;border-radius:10px;color:#fff;background:#245f9f;font-weight:750;cursor:pointer}.links{display:flex;justify-content:space-between;gap:12px;margin-top:18px;font-size:13px}.links a{color:#245f9f;font-weight:750;text-decoration:none}.footer{margin-top:22px;padding:14px;color:#8090a5;border:1px solid #dbe3ed;border-radius:12px;background:#f7f9fc;font-size:11px;text-align:center}.footer a{color:#245f9f;font-weight:700;text-decoration:none}@media(max-width:680px){body{padding:16px}.layout{min-height:auto;grid-template-columns:1fr}.intro{min-height:205px;padding:28px}.intro h1{font-size:29px}.intro p,.secure{display:none}main{padding:34px 27px}}
+</style>
 </head>
-<body>
-    <section class="layout">
-        <aside class="intro" aria-label="StockAI">
-            <div class="brand"><span class="brand-mark" aria-hidden="true">▦</span> StockAI</div>
-            <div><h1>Seu estoque, sempre sob controle.</h1><p>Gerencie produtos, acompanhe alertas e mantenha cada movimentação organizada.</p></div>
-            <div class="secure-note"><span aria-hidden="true">✓</span> Acesso protegido por sessão segura</div>
-        </aside>
-        <main>
-            <div class="form-wrap">
-                <p class="eyebrow">Tecnologia do Amazonas</p>
-                <h2>Boas-vindas</h2>
-                <p class="lead">Entre para cuidar do seu estoque de forma simples e inteligente.</p>
-                {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-                <form method="post" action="/login">
-                    <label for="username">Usuário<input id="username" name="username" autocomplete="username" autofocus required></label>
-                    <label for="password">Senha<input id="password" type="password" name="password" autocomplete="current-password" required></label>
-                    <button type="submit">Entrar no painel</button>
-                </form>
-                <p class="signup-link">Ainda não tem uma conta? <a href="/signup">Criar empresa e administrador</a></p>
-                <div class="footer" aria-label="Contato do suporte">
-                    <span class="footer-title">Precisa de ajuda?</span>
-                    <a class="whatsapp-button" href="https://wa.me/559281660856?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20StockAI." target="_blank" rel="noopener noreferrer">💬 Falar com o suporte no WhatsApp</a>
-                    <div class="footer-contact"><a href="tel:+559281660856">📞 (92) 8166-0856</a><span aria-hidden="true">·</span><a href="mailto:agstarker@gmail.com">✉ agstarker@gmail.com</a></div>
-                    <span class="footer-brand">StockAI · Controle de estoque</span>
-                </div>
-            </div>
-        </main>
-    </section>
-</body>
-</html>
+<body><section class="layout"><aside class="intro"><div class="brand">▦ StockAI</div><div><h1>Seu estoque, sempre sob controle.</h1><p>Gerencie produtos, acompanhe alertas e mantenha cada movimentação organizada.</p></div><div class="secure">✓ Acesso protegido por sessão segura</div></aside><main><div class="form-wrap"><p class="eyebrow">Tecnologia do Amazonas</p><h2>Boas-vindas</h2><p class="lead">Entre para cuidar do seu estoque de forma simples e inteligente.</p>{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}{% if success %}<p class="success" role="status">{{ success }}</p>{% endif %}<form method="post" action="/login"><label for="username">Usuário<input id="username" name="username" autocomplete="username" autofocus required></label><label for="password">Senha<input id="password" type="password" name="password" autocomplete="current-password" required></label><button type="submit">Entrar no painel</button></form><div class="links"><a href="/forgot-password">Esqueci minha senha</a><a href="/signup">Criar conta</a></div><div class="footer">Precisa de ajuda? <a href="mailto:agstarker@gmail.com">Falar com o suporte</a></div></div></main></section></body></html>
