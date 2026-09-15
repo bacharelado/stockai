@@ -80,7 +80,20 @@
     </div>
     {% include 'partials/modals.html' %}
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script id="initial-products" type="application/json">{{ produtos|tojson }}</script>
+    <script id="initial-products" type="application/json">[
+{% for produto in produtos %}{
+    "id": {{ produto.id|tojson }},
+    "nome": {{ produto.nome|tojson }},
+    "categoria": {{ produto.categoria|tojson }},
+    "preco": {{ produto.preco|tojson }},
+    "estoque_atual": {{ produto.estoque_atual|tojson }},
+    "estoque_minimo": {{ produto.estoque_minimo|tojson }},
+    "status": {{ produto.status|tojson }}{% if pode_gerenciar %},
+    "codigo_barras": {{ produto.codigo_barras|tojson }},
+    "custo": {{ produto.custo|tojson }},
+    "margem": {{ produto.margem|tojson }}{% endif %}
+}{% if not loop.last %},{% endif %}
+{% endfor %}]</script>
     <script id="user-permissions" type="application/json">{{ {"canManage": pode_gerenciar}|tojson }}</script>
     <script src="/static/dashboard.js?v=2" defer></script>
     <script src="/static/dashboard-insights.js?v=2" defer></script>
