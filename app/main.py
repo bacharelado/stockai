@@ -7,7 +7,7 @@ from io import StringIO
 from pathlib import Path
 from threading import Lock
 
-from fastapi import Depends, FastAPI, Form, HTTPException, Request
+from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -39,6 +39,7 @@ from app.services import (
     csv_seguro,
     listar_movimentacoes_db,
     listar_produtos_db,
+    listar_produtos_paginado_db,
     produto_to_out,
     gerar_hash_senha,
     registrar_auditoria,
@@ -415,9 +416,38 @@ def excluir_produto(produto_id: int, usuario: models.Usuario = Depends(require_m
 
 
 @app.get("/produtos", dependencies=[Depends(require_auth)])
-def listar_produtos(usuario: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
-    produtos = listar_produtos_db(db, usuario.empresa_id)
-    return api_response([produto_to_out(p) for p in produtos])
+def listar_produtos(
+    usuario: models.Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    page: int = Query(1, ge=1, le=1_000_000),
+    page_size: int = Query(20, ge=1, le=100),
+    busca: str | None = Query(None, max_length=120),
+    status: str = Query("todos", pattern="^(todos|ok|baixo)$"),
+    categoria: str | None = Query(None, max_length=80),
+    ordenar_por: str = Query("nome", pattern="^(nome|preco|estoque_atual)$"),
+    ordem: str = Query("asc", pattern="^(asc|desc)$"),
+):
+    produtos, total = listar_produtos_paginado_db(
+        db,
+        usuario.empresa_id,
+        page=page,
+        page_size=page_size,
+        busca=busca,
+        status=status,
+        categoria=categoria,
+        ordenar_por=ordenar_por,
+        ordem=ordem,
+    )
+    total_pages = max(1, math.ceil(total / page_size))
+    return api_response({
+        "items": [produto_to_out(p) for p in produtos],
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": total_pages,
+        },
+    })
 
 
 @app.post("/produtos/{produto_id}/entrada", dependencies=[Depends(require_auth)])
