@@ -16,6 +16,7 @@ SESSION_SECRET = os.getenv("STOCKAI_SESSION_SECRET")
 INITIAL_COMPANY_NAME = os.getenv("STOCKAI_INITIAL_COMPANY_NAME", "Empresa principal")
 AUTO_CREATE_SCHEMA = os.getenv("STOCKAI_AUTO_CREATE_SCHEMA", "true").lower() == "true"
 DATABASE_URL = os.getenv("STOCKAI_DATABASE_URL", "sqlite:///./stockai.db")
+REDIS_URL = os.getenv("STOCKAI_REDIS_URL")
 ALLOWED_HOSTS = [host.strip() for host in os.getenv(
     "STOCKAI_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver"
 ).split(",") if host.strip()]
