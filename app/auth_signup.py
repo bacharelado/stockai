@@ -4,7 +4,7 @@ import time
 from threading import Lock
 
 from fastapi import HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -16,6 +16,7 @@ class SignupRequest(BaseModel):
     empresa_nome: str = Field(..., min_length=2, max_length=120)
     admin_nome: str = Field(..., min_length=2, max_length=120)
     admin_username: str = Field(..., min_length=3, max_length=80)
+    admin_email: EmailStr
     admin_senha: str = Field(..., min_length=12, max_length=255)
 
 
@@ -80,6 +81,7 @@ def criar_nova_empresa_com_admin(dados: SignupRequest, db: Session, rate_limit_i
     empresa_nome = dados.empresa_nome.strip()
     admin_nome = dados.admin_nome.strip()
     admin_username = dados.admin_username.strip().lower()
+    admin_email = str(dados.admin_email).strip().lower()
 
     if not empresa_nome:
         raise HTTPException(status_code=422, detail="Nome da empresa e obrigatorio")
@@ -95,6 +97,9 @@ def criar_nova_empresa_com_admin(dados: SignupRequest, db: Session, rate_limit_i
     usuario_existente = db.query(models.Usuario).filter(models.Usuario.username == admin_username).first()
     if usuario_existente:
         raise HTTPException(status_code=409, detail="Nome de usuario ja esta em uso")
+    email_existente = db.query(models.Usuario).filter(models.Usuario.email == admin_email).first()
+    if email_existente:
+        raise HTTPException(status_code=409, detail="E-mail ja esta em uso")
 
     empresa = models.Empresa(nome=empresa_nome, ativa=True)
     db.add(empresa)
@@ -106,9 +111,11 @@ def criar_nova_empresa_com_admin(dados: SignupRequest, db: Session, rate_limit_i
             empresa_id=empresa.id,
             nome=admin_nome,
             username=admin_username,
+            email=admin_email,
             password_hash=services.gerar_hash_senha(dados.admin_senha),
             perfil="admin",
             ativo=True,
+            session_version=1,
         )
         db.add(usuario)
         db.flush()
