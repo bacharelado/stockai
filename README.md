@@ -29,6 +29,8 @@ Hoje, o StockAI já centraliza produtos, quantidades, movimentações, alertas, 
 - Sessão de login e logout
 - Auditoria de ações importantes
 - Base preparada para administração da plataforma e planos
+- Cadastro e listagem de filiais por empresa
+- Cadastro e listagem de fornecedores por empresa
 
 ### Planos
 
@@ -118,9 +120,8 @@ Essa visão representa o roadmap do produto. Nem todos esses módulos estão imp
 
 ### Operação
 
-- Gestão de fornecedores
-- Gestão de filiais
 - Transferência de estoque entre filiais
+- Vínculo de fornecedor a produtos e pedidos de compra
 - Código de barras e leitura pelo celular
 - Módulo de vendas/PDV
 - Clientes e pedidos
@@ -245,7 +246,7 @@ A área de relatórios usa os dados reais do estoque e apresenta:
 
 ## Testes
 
-As regras de planos já possuem testes automatizados com `unittest` em `tests/test_plans.py`.
+Já existem testes automatizados com `unittest` em `tests/`: regras de planos (`test_plans.py`), cabeçalhos de segurança (`test_security_headers.py`) e segurança do cadastro de empresas (`test_signup_security.py`).
 
 Para executar:
 
@@ -291,8 +292,13 @@ app/
     relatorios.html
     relatorios.js
     stockai-logo.svg
+    stockai-logo.jpeg
+    stockai-theme.css
   templates/
     partials/
+      header.html
+      modals.html
+      sidebar.html
     dashboard.html
     landing.html
     login.html
@@ -301,6 +307,8 @@ migrations/
   versions/
 tests/
   test_plans.py
+  test_security_headers.py
+  test_signup_security.py
 .env.example
 requirements.txt
 README.md
@@ -328,6 +336,4 @@ StockAI · Controle de estoque
 
 **StockAI 2.0.0 — base funcional de uma plataforma SaaS de gestão de estoque.**
 
-A versão atual já possui operação de estoque, multi-tenancy, autenticação, perfis, auditoria, relatórios, landing comercial, estrutura inicial de planos e deploy em nuvem. A cobrança, a aplicação automática dos limites comerciais e o painel global de Super Admin ainda estão em evolução.
-teste 
-teste2 
+A versão atual já possui operação de estoque, multi-tenancy, autenticação, perfis, auditoria, relatórios, landing comercial, cadastro de filiais e fornecedores, estrutura inicial de planos e deploy em nuvem. A cobrança, a aplicação automática dos limites comerciais e o painel global de Super Admin ainda estão em evolução.
