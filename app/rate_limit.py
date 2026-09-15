@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from threading import Lock
 
 try:
@@ -10,8 +9,9 @@ try:
 except ImportError:  # pragma: no cover - dependencia declarada no requirements
     redis = None
 
+from app.config import REDIS_URL
 
-REDIS_URL = os.getenv("STOCKAI_REDIS_URL")
+
 _REDIS_CONNECT_TIMEOUT = 1.0
 _REDIS_SOCKET_TIMEOUT = 1.0
 _redis_client = None
