@@ -1,4 +1,4 @@
-"""Configuracoes centralizadas do StockAI."""
+"""Configurações centralizadas do StockAI."""
 
 import os
 
@@ -16,13 +16,15 @@ SESSION_SECRET = os.getenv("STOCKAI_SESSION_SECRET")
 INITIAL_COMPANY_NAME = os.getenv("STOCKAI_INITIAL_COMPANY_NAME", "Empresa principal")
 AUTO_CREATE_SCHEMA = os.getenv("STOCKAI_AUTO_CREATE_SCHEMA", "true").lower() == "true"
 DATABASE_URL = os.getenv("STOCKAI_DATABASE_URL", "sqlite:///./stockai.db")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.6-luna")
 ALLOWED_HOSTS = [host.strip() for host in os.getenv(
     "STOCKAI_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver"
 ).split(",") if host.strip()]
 
 
 def validate_settings() -> None:
-    """Falha de forma segura quando a autenticacao nao foi configurada."""
+    """Falha de forma segura quando a autenticação não foi configurada."""
     if REQUIRE_AUTH and (not ADMIN_USERNAME or not ADMIN_PASSWORD or not SESSION_SECRET):
         raise RuntimeError(
             "Defina STOCKAI_ADMIN_USERNAME, STOCKAI_ADMIN_PASSWORD e "
