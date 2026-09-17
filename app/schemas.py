@@ -43,6 +43,10 @@ class MovimentacaoCreate(BaseModel):
     observacao: Optional[str] = Field(None, max_length=500)
 
 
+class IAPergunta(BaseModel):
+    pergunta: str = Field(..., min_length=2, max_length=2000)
+
+
 class UsuarioCreate(BaseModel):
     nome: str = Field(..., min_length=2, max_length=120)
     username: str = Field(..., min_length=3, max_length=80, pattern=r"^[a-zA-Z0-9._-]+$")
