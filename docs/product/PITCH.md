@@ -35,7 +35,16 @@ A experiência foi pensada para ser simples o suficiente para um pequeno negóci
 
 ## O diferencial
 
-O StockAI começa resolvendo o básico muito bem e tem uma direção clara para evoluir de **controle** para **inteligência**.
+O StockAI começa resolvendo o básico de forma simples e tem uma direção clara para evoluir de **controle** para **inteligência**.
+
+Na apresentação comercial, o diferencial é comunicado em quatro frentes:
+
+- **preço previsível:** proposta de valor mensal fixa, sem cobrança surpresa por quantidade de produtos;
+- **inteligência:** evolução para recomendações de compra e uso dos dados do estoque para apoiar decisões;
+- **simplicidade:** experiência pensada para pequenos negócios e para usuários acostumados a controles manuais;
+- **proximidade:** proposta de atendimento e suporte próximo ao cliente.
+
+Os detalhes comerciais apresentados como proposta devem ser distinguidos do que já está implementado no produto.
 
 A próxima camada do produto pode responder perguntas como:
 
@@ -113,7 +122,11 @@ O roadmap do StockAI é transformar a solução em uma plataforma SaaS completa 
 
 ## Modelo de negócio
 
-A direção comercial é um modelo SaaS com planos progressivos, permitindo que o pequeno negócio comece com baixo custo e aumente os recursos conforme sua operação cresce.
+A direção comercial é um modelo SaaS, com cobrança recorrente e proposta de entrada simples para pequenos negócios.
+
+Para a apresentação comercial, a equipe pode trabalhar com uma **proposta de mensalidade fixa de R$ 300**, sem cobrança adicional por quantidade de produtos. Esse valor deve ser tratado como **proposta comercial da apresentação**, não como preço definitivo do produto.
+
+A definição final de planos, preços, limites e recursos comerciais permanece sujeita à decisão da equipe.
 
 Exemplo de estrutura futura:
 
@@ -159,4 +172,6 @@ Pequenos negócios precisam de tecnologia, mas nem sempre conseguem adotar ferra
 
 ## Observação de posicionamento
 
-O StockAI atual é uma **base funcional de produto**, não uma promessa de que todos os recursos do roadmap já estão disponíveis. Super Admin completo, planos comerciais, vendas, filiais e inteligência avançada devem ser tratados como etapas futuras de desenvolvimento.
+O StockAI atual é uma **base funcional de produto**, não uma promessa de que todos os recursos do roadmap já estão disponíveis. Super Admin completo, planos comerciais definitivos, vendas, filiais, código de barras e inteligência avançada devem ser tratados como etapas futuras de desenvolvimento.
+
+Na comunicação da apresentação, recursos futuros devem ser apresentados como **proposta ou evolução do produto**, enquanto dashboard, produtos, entradas e saídas, histórico, alertas, sugestões de reposição, relatórios, usuários, permissões, isolamento por empresa e segurança podem ser apresentados como recursos da versão atual.
